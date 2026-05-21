@@ -216,6 +216,7 @@ const GLOSS = {
   'SMI':'Structure of Management Information — the GUIDELINE/RULES: names objects (OID), defines data types, and the encoding method (BER).',
   'MIB':'Management Information Base — the actual COLLECTION of named objects an agent stores; walked in lexicographic order.',
   'OID':'Object Identifier — a hierarchical, tree-structured name, e.g. the udp group = 1.3.6.1.2.1.7.',
+  'lexicographic':'Dictionary order applied to OIDs: compare the integers number-by-number left to right; the first differing number decides order, and a prefix comes before a longer OID. This single sorted line is what lets GetNextRequest walk the whole MIB.',
   'BER':'Basic Encoding Rules — how SMI serializes object values onto the wire.',
   'manager':'The SNMP client (usually a host) that monitors and controls the network.',
   'agent':'The SNMP server (a router or host) that holds the MIB and responds to the manager.',
@@ -471,8 +472,38 @@ C.ch8 = `
 <tr><td><b>Simple variable</b></td><td>group ID <b>+</b> variable ID</td><td><code>udpInDatagrams → ...7.1</code></td></tr>
 <tr><td><b>Table entry</b></td><td>table ID <b>+</b> column <b>+</b> row index</td><td><code>udpLocalAddress → ...7.5.1.1</code></td></tr>
 </table>
-<p style="font-size:12.5px;color:var(--muted)">MIB uses <span class="kw">lexicographic ordering</span> to walk its variables — that's what makes <code>GetNextRequest</code> able to "walk the tree."</p>
+<p style="font-size:12.5px;color:var(--muted)">MIB uses <span class="kw" data-g="lexicographic">lexicographic ordering</span> to walk its variables — that's what makes <code>GetNextRequest</code> able to "walk the tree."</p>
 </div>
+
+<h2>Lexicographic ordering — how the MIB sorts itself</h2>
+<p><b>Lexicographic = "dictionary order."</b> In a dictionary you compare words letter-by-letter and sort by the <b>first position where they differ</b> ("cab" before "cat" because b &lt; t). The MIB does the same thing, but on the <b>integers of each <span class="term" data-g="OID">OID</span></b> instead of letters — comparing number-by-number, left to right.</p>
+
+<div class="grid2">
+  <div class="card"><h3 style="margin-top:0">The rule</h3>
+  <p style="font-size:13px">Compare two OIDs position by position:</p>
+  <ul style="font-size:12.5px;color:var(--muted)">
+    <li>First differing number decides the order (smaller comes first).</li>
+    <li>A shorter OID that is a <b>prefix</b> of a longer one comes first — like "car" before "cargo" (so <code>...7.5</code> precedes <code>...7.5.1.1</code>).</li>
+  </ul>
+  </div>
+  <div class="card"><h3 style="margin-top:0">Why it matters</h3>
+  <p style="font-size:13px">Everything sits in <b>one predictable sorted line</b>, so the agent can always answer <i>"what object comes next?"</i> — which is exactly what <code>GetNextRequest</code> needs.</p>
+  </div>
+</div>
+
+<div class="lab" id="lab-lex">
+  <h4>⚙ Walk the MIB with GetNextRequest</h4>
+  <div class="desc">The agent's objects are stored in lexicographic order of their OIDs (shown sorted below). Press <b>GetNext</b> to make the manager walk from one object to the next — notice it visits every entry, including each table row, with no idea in advance how many there are.</div>
+  <div id="lex-list"></div>
+  <div class="controls" style="margin-top:8px">
+    <button class="btn sm" id="lex-next">▶ GetNext</button>
+    <button class="btn sm ghost" id="lex-reset">↺ Reset</button>
+    <span class="readout" style="margin-left:6px" id="lex-msg">Manager starts at the top of the udp group.</span>
+  </div>
+</div>
+
+<div class="exam"><b>Exam line:</b> MIB variables are arranged in <b>lexicographic order</b> of their OIDs, which is what lets <code>GetNextRequest</code> walk through every object — including unknown table rows — one at a time.</div>
+<div class="trick"><b>Memory trick</b><br><span class="hook">Lexicographic = dictionary order, but for numbers</span> — compare the OID's integers left-to-right, just like spelling out a word letter-by-letter. "Next" always means the next entry in that one sorted line.</div>
 
 <h2>SNMP PDUs (the message types)</h2>
 <div class="keymap" style="margin-bottom:10px">
@@ -500,6 +531,27 @@ C.ch9 = `
 <div class="crumb">DATA-LINK LAYER · WEEK 9</div>
 <h1 class="title"><span class="num">09</span> Link Layer · Framing, Errors & MAC</h1>
 <p class="lead">The data-link layer moves frames between <b>two adjacent nodes</b>. It splits into two sublayers: <span class="term" data-g="DLC">DLC</span> (works on any link) and <span class="term" data-g="MAC">MAC</span> (only matters on shared/broadcast links — who gets to talk?).</p>
+
+<h2>Why do we even need this layer?</h2>
+<p>The physical layer can only push <b>raw bits</b> down a wire — no concept of "messages," no promise they arrive intact, no rule for who may talk on a shared wire. The link layer exists to fill exactly <b>three gaps</b>, which is why the chapter is named <i>Framing, Errors &amp; MAC</i>. Press play to watch each gap — and its fix.</p>
+
+<div class="lab" id="lab-why">
+  <h4>⚙ The three gaps the link layer fills</h4>
+  <div class="desc">Each scene shows the <b style="color:var(--bad)">problem</b> with raw bits, then the link-layer <b style="color:var(--accent2)">fix</b>.</div>
+  <div class="tabs whytabs" id="why-tabs">
+    <div class="tab active" data-pane="frame">① Framing</div>
+    <div class="tab" data-pane="err">② Error control</div>
+    <div class="tab" data-pane="mac">③ MAC</div>
+  </div>
+  <div id="why-anim"></div>
+  <div class="controls" style="margin-top:4px">
+    <button class="btn sm" id="why-play">▶ Play</button>
+    <button class="btn sm ghost" id="why-reset">↺ Reset</button>
+  </div>
+  <div id="why-cap" style="margin-top:10px;font-size:13px"></div>
+</div>
+
+<div class="note cyan"><b>One-sentence answer:</b> the physical layer only moves raw bits, so <i>someone</i> must package them into recognizable <b>frames</b>, verify they arrived <b>uncorrupted</b>, and arbitrate who may use a <b>shared medium</b>. That someone is the data-link layer — framing / errors / MAC are exactly those three jobs.</div>
 
 <h2>Two sublayers</h2>
 <div class="cmp">
@@ -1402,6 +1454,7 @@ window.attachGlossWithin=function(root){
 // tabs (generic)
 function attachTabs(){
   document.querySelectorAll('.tabs').forEach(group=>{
+    if(group.classList.contains('whytabs')) return; // driven by custom handler
     group.querySelectorAll('.tab').forEach(tab=>{
       tab.onclick=()=>{
         group.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
@@ -1672,7 +1725,58 @@ function initSNMP(){
 
   staticPhase(0);
 }
-LAB_INIT.ch8={fn:initSNMP,done:false};
+LAB_INIT.ch8={fn:()=>{initSNMP();initLex();},done:false};
+
+// ---- CH8: lexicographic MIB walk ----
+const LEX_OBJECTS=[
+  {oid:'1.3.6.1.2.1.7.1', name:'udpInDatagrams', kind:'simple', val:'142'},
+  {oid:'1.3.6.1.2.1.7.2', name:'udpNoPorts', kind:'simple', val:'7'},
+  {oid:'1.3.6.1.2.1.7.4', name:'udpOutDatagrams', kind:'simple', val:'98'},
+  {oid:'1.3.6.1.2.1.7.5.1.1', name:'udpLocalAddress [row 1]', kind:'table', val:'10.0.0.5'},
+  {oid:'1.3.6.1.2.1.7.5.1.2', name:'udpLocalPort [row 1]', kind:'table', val:'161'},
+  {oid:'1.3.6.1.2.1.7.5.2.1', name:'udpLocalAddress [row 2]', kind:'table', val:'10.0.0.9'},
+  {oid:'1.3.6.1.2.1.7.5.2.2', name:'udpLocalPort [row 2]', kind:'table', val:'520'},
+];
+function initLex(){
+  const list=document.getElementById('lex-list');
+  const msg=document.getElementById('lex-msg');
+  let cur=-1; // -1 = before first
+  function render(){
+    let h='<div style="font-family:var(--mono);font-size:12.5px">';
+    LEX_OBJECTS.forEach((o,i)=>{
+      const on=i===cur;
+      const visited=i<cur;
+      const bg=on?'rgba(255,210,63,.16)':(visited?'rgba(51,214,166,.06)':'transparent');
+      const bd=on?'#ffd23f':(visited?'rgba(51,214,166,.3)':'var(--line)');
+      const tag=o.kind==='table'?'<span style="font-size:9px;color:var(--violet);border:1px solid var(--violet);border-radius:4px;padding:0 4px;margin-left:6px">table row</span>':'';
+      h+=`<div style="display:flex;align-items:center;gap:10px;padding:7px 10px;margin:3px 0;border:1px solid ${bd};border-radius:7px;background:${bg};transition:.2s">
+        <span style="min-width:18px;color:${on?'#ffd23f':'var(--muted)'}">${on?'▶':(visited?'✓':'&nbsp;')}</span>
+        <code style="color:${on?'#ffd23f':'var(--blue)'}">${o.oid}</code>
+        <span style="color:var(--muted)">${o.name}${tag}</span>
+        <span style="margin-left:auto;color:${on?'var(--accent2)':'var(--muted)'}">${on||visited?'= '+o.val:''}</span>
+      </div>`;
+    });
+    h+='</div>';
+    list.innerHTML=h;
+  }
+  function next(){
+    if(cur>=LEX_OBJECTS.length-1){
+      msg.innerHTML='<span style="color:var(--accent2)">End of the udp subtree — the walk is complete. Every object, including all 4 table cells, was visited in order.</span>';
+      return;
+    }
+    cur++;
+    const o=LEX_OBJECTS[cur];
+    if(cur===0) msg.innerHTML='GetNext → first object: <code>'+o.oid+'</code> ('+o.name+').';
+    else{
+      const prev=LEX_OBJECTS[cur-1];
+      msg.innerHTML='GetNext after <code>'+prev.oid+'</code> → <code>'+o.oid+'</code>. It&rsquo;s next in lexicographic order.';
+    }
+    render();
+  }
+  document.getElementById('lex-next').onclick=next;
+  document.getElementById('lex-reset').onclick=()=>{cur=-1;msg.textContent='Manager starts at the top of the udp group.';render();};
+  render();
+}
 
 // ---- CH9: Parity & checksum ----
 function initParity(){
@@ -1744,7 +1848,171 @@ function initCSMA(){
 LAB_INIT.ch9csma={fn:initCSMA,done:false};
 
 // combine ch9 inits
-LAB_INIT.ch9={fn:()=>{initStuff();initParity();initCSMA();},done:false};
+LAB_INIT.ch9={fn:()=>{initWhy();initStuff();initParity();initCSMA();},done:false};
+
+// ---- CH9: Why the link layer exists (3-gap animation) ----
+function initWhy(){
+  const host=document.getElementById('why-anim');
+  const cap=document.getElementById('why-cap');
+  let scene='frame', timer=null, raf=null;
+
+  function clearTimers(){ if(timer){clearTimeout(timer);timer=null;} if(raf){cancelAnimationFrame(raf);raf=null;} }
+  function tween(from,to,ms,onframe,done){
+    if(raf)cancelAnimationFrame(raf);
+    const t0=performance.now();
+    (function fr(now){const k=Math.min(1,(now-t0)/ms);const e=k<.5?2*k*k:1-Math.pow(-2*k+2,2)/2;onframe(from+(to-from)*e);if(k<1)raf=requestAnimationFrame(fr);else{raf=null;done&&done();}})(performance.now());
+  }
+
+  // ---------- scene templates ----------
+  const BITS='0110100011010010';
+  function frameSVG(){
+    let bits='';
+    for(let i=0;i<BITS.length;i++){
+      bits+=`<text x="${30+i*24}" y="62" font-size="15" fill="#8b98a9" id="fb${i}" font-family="var(--mono)">${BITS[i]}</text>`;
+    }
+    return `<svg id="why-svg" viewBox="0 0 430 170" style="width:100%;max-width:430px;display:block;margin:auto">
+      <text x="215" y="22" text-anchor="middle" font-size="11" fill="#ff5d5d" id="why-label">Problem: one unbroken bit-stream — where does a message start?</text>
+      ${bits}
+      <!-- frame envelope (hidden initially) -->
+      <g id="env" opacity="0">
+        <rect x="14" y="92" width="92" height="40" rx="6" fill="rgba(255,210,63,.10)" stroke="#ffd23f" stroke-width="1.4"/>
+        <text x="60" y="108" text-anchor="middle" font-size="8" fill="#ffd23f">FLAG</text>
+        <text x="60" y="121" text-anchor="middle" font-size="8" fill="#e6edf3">header</text>
+        <rect x="110" y="92" width="200" height="40" rx="6" fill="rgba(74,163,255,.10)" stroke="#4aa3ff" stroke-width="1.4"/>
+        <text x="210" y="115" text-anchor="middle" font-size="9" fill="#4aa3ff">DATA (the packet)</text>
+        <rect x="314" y="92" width="92" height="40" rx="6" fill="rgba(255,210,63,.10)" stroke="#ffd23f" stroke-width="1.4"/>
+        <text x="360" y="108" text-anchor="middle" font-size="8" fill="#ffd23f">FLAG</text>
+        <text x="360" y="121" text-anchor="middle" font-size="8" fill="#e6edf3">trailer</text>
+      </g>
+    </svg>`;
+  }
+  function errSVG(){
+    return `<svg id="why-svg" viewBox="0 0 460 180" style="width:100%;max-width:460px;display:block;margin:auto">
+      <text x="230" y="20" text-anchor="middle" font-size="11" fill="#8b98a9" id="why-label">A frame is sent across a noisy link…</text>
+      <!-- sender -->
+      <rect x="14" y="60" width="96" height="44" rx="7" fill="#121821" stroke="#4aa3ff" stroke-width="1.4"/>
+      <text x="62" y="80" text-anchor="middle" font-size="10" fill="#4aa3ff">SENDER</text>
+      <text x="62" y="95" text-anchor="middle" font-size="9" fill="#8b98a9">data + CRC</text>
+      <!-- receiver -->
+      <rect x="350" y="60" width="96" height="44" rx="7" fill="#121821" stroke="#ff7a1a" stroke-width="1.4"/>
+      <text x="398" y="80" text-anchor="middle" font-size="10" fill="#ff7a1a">RECEIVER</text>
+      <text x="398" y="95" text-anchor="middle" font-size="9" fill="#8b98a9" id="rx-check">checks CRC</text>
+      <!-- wire -->
+      <line x1="110" y1="82" x2="350" y2="82" stroke="#243140" stroke-width="1.4" stroke-dasharray="5 6"/>
+      <text x="230" y="120" text-anchor="middle" font-size="9" fill="#8b98a9">⚡ noise</text>
+      <!-- frame packet -->
+      <g id="ef" opacity="0">
+        <rect id="ef-box" x="-34" y="-14" width="68" height="28" rx="5" fill="#161e2a" stroke="#33d6a6" stroke-width="1.4"/>
+        <text id="ef-t" x="0" y="4" text-anchor="middle" font-size="9" fill="#33d6a6" font-family="var(--mono)">10110·CRC</text>
+      </g>
+      <text x="230" y="150" text-anchor="middle" font-size="11" id="err-verdict"></text>
+    </svg>`;
+  }
+  function macSVG(){
+    return `<svg id="why-svg" viewBox="0 0 460 200" style="width:100%;max-width:460px;display:block;margin:auto">
+      <text x="230" y="18" text-anchor="middle" font-size="11" fill="#8b98a9" id="why-label">Three stations share one wire (broadcast medium)…</text>
+      <!-- shared bus -->
+      <line x1="40" y1="120" x2="420" y2="120" stroke="#4aa3ff" stroke-width="3" opacity=".5"/>
+      <!-- stations -->
+      <g font-size="9">
+        <rect x="40" y="60" width="70" height="34" rx="6" fill="#121821" stroke="#33d6a6" stroke-width="1.3"/><text x="75" y="81" text-anchor="middle" fill="#33d6a6">A</text><line x1="75" y1="94" x2="75" y2="120" stroke="#33d6a6" stroke-width="1.3"/>
+        <rect x="195" y="60" width="70" height="34" rx="6" fill="#121821" stroke="#ffd23f" stroke-width="1.3"/><text x="230" y="81" text-anchor="middle" fill="#ffd23f">B</text><line x1="230" y1="94" x2="230" y2="120" stroke="#ffd23f" stroke-width="1.3"/>
+        <rect x="350" y="60" width="70" height="34" rx="6" fill="#121821" stroke="#b48cff" stroke-width="1.3"/><text x="385" y="81" text-anchor="middle" fill="#b48cff">C</text><line x1="385" y1="94" x2="385" y2="120" stroke="#b48cff" stroke-width="1.3"/>
+      </g>
+      <!-- signals -->
+      <circle id="sigA" cx="75" cy="120" r="0" fill="none" stroke="#33d6a6" stroke-width="2" opacity="0"/>
+      <circle id="sigB" cx="230" cy="120" r="0" fill="none" stroke="#ffd23f" stroke-width="2" opacity="0"/>
+      <text x="230" y="160" text-anchor="middle" font-size="12" id="mac-verdict"></text>
+    </svg>`;
+  }
+
+  // ---------- scene players ----------
+  function playFrame(){
+    cap.innerHTML="<b>Problem:</b> the physical layer delivers a continuous stream of bits with no punctuation — the receiver can't tell where one message ends and the next begins.";
+    host.querySelectorAll('#fb0,#fb1').forEach(()=>{});
+    const env=host.querySelector('#env');
+    const label=host.querySelector('#why-label');
+    // step 1: just bits (already shown). After delay, wrap into a frame.
+    timer=setTimeout(()=>{
+      label.setAttribute('fill','#33d6a6');
+      label.textContent='Fix: FRAMING wraps the bits in flags → a recognizable frame';
+      tween(0,1,500,v=>env.setAttribute('opacity',v));
+      // fade raw bits up into the frame
+      for(let i=0;i<BITS.length;i++){const b=host.querySelector('#fb'+i);if(b)tween(62,150,500,y=>b.setAttribute('y',y),null);}
+      cap.innerHTML="<b>Fix — Framing:</b> the link layer adds a start <b>flag</b>, header, the data, and an end flag, so the receiver can chop the stream into discrete <b>frames</b>. <span style='color:var(--muted)'>(Like spaces between words in Morse code.)</span>";
+    },1300);
+  }
+  function playErr(){
+    cap.innerHTML="<b>Problem:</b> media are noisy — a bit can flip in transit (a 0 becomes a 1). Without a check, the receiver would accept corrupted data.";
+    const ef=host.querySelector('#ef'); const box=host.querySelector('#ef-box'); const t=host.querySelector('#ef-t');
+    const label=host.querySelector('#why-label'); const verdict=host.querySelector('#err-verdict');
+    verdict.textContent=''; t.textContent='10110·CRC'; box.setAttribute('stroke','#33d6a6'); t.setAttribute('fill','#33d6a6');
+    ef.setAttribute('opacity','1');
+    // travel
+    tween(62,398,1100,x=>ef.setAttribute('transform','translate('+x+',82)'),()=>{
+      // bit flips mid-way already passed; now show corruption + detection
+      label.setAttribute('fill','#ff5d5d'); label.textContent='⚡ A bit flipped on the wire!';
+      t.textContent='10010·CRC'; box.setAttribute('stroke','#ff5d5d'); t.setAttribute('fill','#ff5d5d');
+      timer=setTimeout(()=>{
+        verdict.setAttribute('fill','#33d6a6');
+        verdict.innerHTML='✓ CRC mismatch → error DETECTED → ask for resend (ARQ)';
+        cap.innerHTML="<b>Fix — Error control:</b> the sender appends redundant check bits (<span class='kw'>CRC</span>). The receiver recomputes them; a mismatch reveals corruption, and <span class='kw'>ARQ</span> requests a retransmission. <b>Flow control</b> additionally stops a fast sender from swamping a slow receiver.";
+      },700);
+    });
+    // mid-flight flip marker
+    timer=setTimeout(()=>{ t.textContent='101↯0·CRC'; },650);
+  }
+  function playMac(){
+    cap.innerHTML="<b>Problem:</b> on a shared wire, if two stations transmit at once their signals overlap and corrupt each other — a <b>collision</b>.";
+    const A=host.querySelector('#sigA'), B=host.querySelector('#sigB');
+    const label=host.querySelector('#why-label'), verdict=host.querySelector('#mac-verdict');
+    verdict.textContent='';
+    A.setAttribute('opacity','1');B.setAttribute('opacity','1');
+    // both expand → collide
+    tween(0,150,900,r=>{A.setAttribute('r',r);B.setAttribute('r',r);A.setAttribute('opacity',1-r/200);B.setAttribute('opacity',1-r/200);},()=>{
+      label.setAttribute('fill','#ff5d5d');label.textContent='💥 A and B transmitted together → COLLISION';
+      verdict.setAttribute('fill','#ff5d5d');verdict.textContent='✗ both messages destroyed';
+      timer=setTimeout(()=>{
+        // fix: only A sends
+        A.setAttribute('r',0);B.setAttribute('r',0);A.setAttribute('opacity','1');B.setAttribute('opacity','0');
+        label.setAttribute('fill','#33d6a6');label.textContent='Fix: MAC referees — B waits, only A transmits';
+        verdict.setAttribute('fill','#33d6a6');verdict.textContent='✓ one at a time → no collision';
+        tween(0,150,900,r=>{A.setAttribute('r',r);A.setAttribute('opacity',1-r/220);});
+        cap.innerHTML="<b>Fix — MAC (Media Access Control):</b> a referee decides <b>who transmits when</b> — by sensing first (<span class='kw'>CSMA</span>), passing a token, or splitting the channel (FDMA/TDMA/CDMA). Only needed on <b>shared</b> links.";
+      },1200);
+    });
+  }
+
+  function mount(){
+    clearTimers();
+    if(scene==='frame')host.innerHTML=frameSVG();
+    else if(scene==='err')host.innerHTML=errSVG();
+    else host.innerHTML=macSVG();
+    const intro={frame:"<b>Gap 1 — Framing.</b> Press ▶ Play to see the problem and fix.",
+                 err:"<b>Gap 2 — Error control.</b> Press ▶ Play.",
+                 mac:"<b>Gap 3 — MAC.</b> Press ▶ Play."};
+    cap.innerHTML=intro[scene];
+  }
+  function play(){
+    mount();
+    if(scene==='frame')playFrame();
+    else if(scene==='err')playErr();
+    else playMac();
+    if(window.attachGlossWithin)setTimeout(()=>window.attachGlossWithin(cap),50);
+  }
+
+  // tab switching
+  host.parentElement.querySelectorAll('#why-tabs .tab').forEach(tab=>{
+    tab.addEventListener('click',()=>{
+      host.parentElement.querySelectorAll('#why-tabs .tab').forEach(t=>t.classList.remove('active'));
+      tab.classList.add('active');
+      scene=tab.dataset.pane; mount();
+    });
+  });
+  document.getElementById('why-play').onclick=play;
+  document.getElementById('why-reset').onclick=mount;
+  mount();
+}
 
 // ---- CH9: byte stuffing ----
 function initStuff(){
