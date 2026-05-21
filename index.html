@@ -443,13 +443,17 @@ C.ch8 = `
 <div class="note cyan"><b>Analogy:</b> Think of a spreadsheet. <span class="kw">SMI</span> = the rules for naming columns and what type each holds. <span class="kw">MIB</span> = the actual filled-in sheet of values. <span class="kw">SNMP</span> = the messages you send to read/write a cell.</div>
 
 <div class="lab" id="lab-snmp">
-  <h4>⚙ SNMP request walkthrough</h4>
-  <div class="desc">A manager wants to know how many UDP datagrams an agent received. Step through the exchange and see how SNMP, SMI and MIB each play a part.</div>
-  <div id="snmp-stage"></div>
-  <div class="controls">
-    <button class="btn sm" id="snmp-next">▶ Next step</button>
+  <h4>⚙ SNMP request walkthrough — animated</h4>
+  <div class="desc">A manager asks an agent: <i>"how many UDP datagrams have you received?"</i> Watch the <b>GetRequest</b> packet travel to the agent, the agent look up its <b>MIB</b>, and a <b>Response</b> carry the value back. Press play, or step through phase by phase.</div>
+  <div id="snmp-anim"></div>
+  <div class="controls" style="margin-top:4px">
+    <button class="btn sm" id="snmp-play">▶ Play</button>
+    <button class="btn sm ghost" id="snmp-prev">◀ Prev</button>
+    <button class="btn sm ghost" id="snmp-next">Next ▶</button>
     <button class="btn sm ghost" id="snmp-reset">↺ Reset</button>
+    <span class="readout" style="margin-left:6px">Phase <b id="snmp-pn">0</b>/5</span>
   </div>
+  <div id="snmp-cap" style="margin-top:10px;font-size:13px"></div>
 </div>
 
 <h2>SMI — the three attributes of an object</h2>
@@ -1373,6 +1377,28 @@ function attachGloss(){
   document.addEventListener('click',e=>{if(!e.target.closest('[data-g]'))tip.style.display='none';},true);
 }
 
+// Attach glossary tooltips to [data-g] terms inside a freshly-rendered container.
+// Used by dynamic content (e.g. the animated SNMP captions).
+window.attachGlossWithin=function(root){
+  if(!root) return;
+  const tip=document.getElementById('tip');
+  if(!tip) return;
+  function moveTip(e){
+    let x=(e.clientX||0)+14,y=(e.clientY||0)+14;
+    if(x+280>window.innerWidth)x=Math.max(8,(e.clientX||0)-290);
+    if(y+120>window.innerHeight)y=Math.max(8,(e.clientY||0)-120);
+    tip.style.left=x+'px';tip.style.top=y+'px';
+  }
+  function showTip(el,e){const key=el.dataset.g;const g=GLOSS[key];if(!g)return;tip.innerHTML='<b>'+key+'</b> — '+g;tip.style.display='block';moveTip(e);}
+  root.querySelectorAll('[data-g]').forEach(t=>{
+    if(t.dataset.glossBound) return; t.dataset.glossBound='1';
+    t.addEventListener('mouseenter',e=>showTip(t,e));
+    t.addEventListener('mousemove',moveTip);
+    t.addEventListener('mouseleave',()=>tip.style.display='none');
+    t.addEventListener('click',e=>{showTip(t,e);});
+  });
+};
+
 // tabs (generic)
 function attachTabs(){
   document.querySelectorAll('.tabs').forEach(group=>{
@@ -1463,27 +1489,188 @@ function renderDVTables(){
 }
 LAB_INIT.ch7={fn:initDV,done:false};
 
-// ---- CH8: SNMP walkthrough ----
-const snmpSteps=[
-  {t:"Manager builds a GetRequest",d:"The manager (SNMP client) wants <b>udpInDatagrams</b>. SMI tells it the object's OID is <code>1.3.6.1.2.1.7.1</code> and how to encode it (BER). SNMP packages this as a <b>GetRequest</b> PDU."},
-  {t:"Request travels to the Agent",d:"The GetRequest PDU is sent over UDP to the agent (SNMP server) running on the router."},
-  {t:"Agent looks up its MIB",d:"The agent finds the object in its <b>MIB</b> using lexicographic ordering and reads the current value (say, 142 datagrams)."},
-  {t:"Agent returns a Response",d:"SNMP wraps the value in a <b>Response</b> PDU and sends it back. The manager now knows the count. (If something had gone wrong unprompted, the agent could fire a <b>Trap</b>.)"},
+// ---- CH8: SNMP walkthrough (animated 2D) ----
+// 6 phases (0..5): idle, build, send→, lookup, respond←, done
+const SNMP_PHASES=[
+  {name:"Ready",
+   cap:"<b>The setup.</b> A <span class='kw'>manager</span> (SNMP client) on the left wants to read a value from an <span class='kw'>agent</span> (SNMP server) on the right. The agent stores its data in a <span class='kw'>MIB</span> — the stack of objects shown in its tray. Press <b>▶ Play</b>."},
+  {name:"Build PDU",
+   cap:"<b>① Manager builds a GetRequest.</b> It wants <code>udpInDatagrams</code>. <span class='kw'>SMI</span> supplies the object's name as an <span class='term' data-g='OID'>OID</span> <code>1.3.6.1.2.1.7.1</code> and the <span class='kw'>BER</span> encoding rules. <span class='kw'>SNMP</span> packs this into a <b>GetRequest</b> PDU."},
+  {name:"Send →",
+   cap:"<b>② Request travels to the agent.</b> The GetRequest PDU is carried over UDP across the network to the agent running on the router."},
+  {name:"MIB lookup",
+   cap:"<b>③ Agent looks up its MIB.</b> Using lexicographic order it finds object <code>...7.1</code> and reads the current value — here <b>142</b> datagrams. The matching MIB row lights up."},
+  {name:"Respond ←",
+   cap:"<b>④ Agent returns a Response.</b> SNMP wraps the value <code>142</code> in a <b>Response</b> PDU and sends it back to the manager. <span style='color:var(--muted)'>(If an event had occurred unprompted, the agent could instead fire a <b>Trap</b>.)</span>"},
+  {name:"Done",
+   cap:"<b>⑤ Done.</b> The manager now knows the agent received <b>142</b> UDP datagrams. Recap the trio: <span class='hook' style='font-size:.92em'>SMI names it · MIB keeps it · SNMP moves it</span>."},
 ];
+
 function initSNMP(){
-  let step=0;
-  const stage=document.getElementById('snmp-stage');
-  function render(){
-    let h='';
-    snmpSteps.forEach((s,i)=>{
-      const on=i<=step;
-      h+=`<div class="flow-step" style="opacity:${on?1:.3}"><div class="n${i%2?' alt':''}">${i+1}</div><div><b>${s.t}</b>${on?'<br><span style="font-size:12.5px;color:var(--muted)">'+s.d+'</span>':''}</div></div>`;
-    });
-    stage.innerHTML=h;
+  const host=document.getElementById('snmp-anim');
+  // ---- build the SVG scene once ----
+  host.innerHTML=`
+  <svg id="snmp-svg" viewBox="0 0 720 300" style="width:100%;max-width:720px;display:block;margin:auto">
+    <defs>
+      <marker id="ar" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+        <path d="M0,0 L6,3 L0,6 Z" fill="#8b98a9"/>
+      </marker>
+      <linearGradient id="wire" x1="0" x2="1">
+        <stop offset="0" stop-color="#4aa3ff" stop-opacity=".15"/>
+        <stop offset=".5" stop-color="#4aa3ff" stop-opacity=".5"/>
+        <stop offset="1" stop-color="#4aa3ff" stop-opacity=".15"/>
+      </linearGradient>
+    </defs>
+
+    <!-- network link -->
+    <line x1="190" y1="150" x2="500" y2="150" stroke="url(#wire)" stroke-width="6" stroke-linecap="round"/>
+    <line x1="190" y1="150" x2="500" y2="150" stroke="#243140" stroke-width="1.4" stroke-dasharray="5 7"/>
+    <text x="345" y="142" text-anchor="middle" font-size="10" fill="#8b98a9">UDP / IP network</text>
+
+    <!-- MANAGER -->
+    <g id="snmp-mgr">
+      <rect x="40" y="92" width="150" height="116" rx="12" fill="#121821" stroke="#4aa3ff" stroke-width="1.6"/>
+      <rect x="62" y="112" width="106" height="60" rx="5" fill="#0d1117" stroke="#4aa3ff" stroke-width="1.2"/>
+      <rect x="84" y="172" width="62" height="8" rx="2" fill="#1a2433" stroke="#4aa3ff" stroke-width="1"/>
+      <text x="115" y="146" text-anchor="middle" font-size="22">🧑‍💻</text>
+      <text x="115" y="200" text-anchor="middle" font-size="12" fill="#4aa3ff" font-weight="700">MANAGER</text>
+      <text x="115" y="84" text-anchor="middle" font-size="9.5" fill="#8b98a9">SNMP client</text>
+    </g>
+
+    <!-- AGENT (router) + MIB tray -->
+    <g id="snmp-agent">
+      <rect x="500" y="96" width="120" height="50" rx="8" fill="#121821" stroke="#ff7a1a" stroke-width="1.6"/>
+      <circle cx="520" cy="121" r="4" fill="#33d6a6"/><circle cx="534" cy="121" r="4" fill="#ffd23f"/><circle cx="548" cy="121" r="4" fill="#ff7a1a"/>
+      <text x="588" y="125" text-anchor="middle" font-size="18">🖧</text>
+      <text x="560" y="90" text-anchor="middle" font-size="12" fill="#ff7a1a" font-weight="700">AGENT</text>
+      <text x="560" y="160" text-anchor="middle" font-size="9.5" fill="#8b98a9">SNMP server</text>
+    </g>
+
+    <!-- MIB tray -->
+    <g id="snmp-mib">
+      <rect x="500" y="176" width="180" height="104" rx="10" fill="#0d1117" stroke="#33d6a6" stroke-width="1.4"/>
+      <text x="590" y="192" text-anchor="middle" font-size="10" fill="#33d6a6" font-weight="700">MIB (object store)</text>
+      <g font-size="9.5" font-family="var(--mono)">
+        <rect id="mib-r0" x="510" y="200" width="160" height="17" rx="3" fill="#161e2a" stroke="#243140"/>
+        <text x="516" y="212" fill="#8b98a9">...7.1 udpInDatagrams</text><text id="mib-v0" x="662" y="212" text-anchor="end" fill="#8b98a9">142</text>
+        <rect x="510" y="220" width="160" height="17" rx="3" fill="#161e2a" stroke="#243140"/>
+        <text x="516" y="232" fill="#8b98a9">...7.2 udpNoPorts</text><text x="662" y="232" text-anchor="end" fill="#8b98a9">7</text>
+        <rect x="510" y="240" width="160" height="17" rx="3" fill="#161e2a" stroke="#243140"/>
+        <text x="516" y="252" fill="#8b98a9">...7.4 udpOutDatagrams</text><text x="662" y="252" text-anchor="end" fill="#8b98a9">98</text>
+        <rect x="510" y="260" width="160" height="14" rx="3" fill="#161e2a" stroke="#243140"/>
+        <text x="516" y="270" fill="#8b98a9">...7.5.1 udpTable …</text>
+      </g>
+    </g>
+
+    <!-- PACKET -->
+    <g id="snmp-pkt" opacity="0">
+      <rect id="pkt-box" x="-46" y="-22" width="92" height="44" rx="7" fill="#161e2a" stroke="#ffd23f" stroke-width="1.6"/>
+      <text id="pkt-t1" x="0" y="-6" text-anchor="middle" font-size="9.5" fill="#ffd23f" font-weight="700">GetRequest</text>
+      <text id="pkt-t2" x="0" y="7" text-anchor="middle" font-size="8" fill="#e6edf3">OID ...7.1</text>
+      <text id="pkt-t3" x="0" y="17" text-anchor="middle" font-size="7.5" fill="#8b98a9">BER-encoded</text>
+    </g>
+
+    <!-- floating PDU build bubble over manager -->
+    <g id="snmp-build" opacity="0">
+      <rect x="34" y="20" width="172" height="52" rx="8" fill="#0d1117" stroke="#ffd23f" stroke-width="1.3"/>
+      <text x="120" y="36" text-anchor="middle" font-size="9" fill="#ffd23f" font-weight="700">PDU = GetRequest</text>
+      <text x="120" y="49" text-anchor="middle" font-size="8" fill="#e6edf3">name: 1.3.6.1.2.1.7.1</text>
+      <text x="120" y="61" text-anchor="middle" font-size="8" fill="#8b98a9">SMI: type + BER encoding</text>
+    </g>
+  </svg>`;
+
+  const svg=host.querySelector('#snmp-svg');
+  const pkt=svg.querySelector('#snmp-pkt');
+  const pktBox=svg.querySelector('#pkt-box');
+  const t1=svg.querySelector('#pkt-t1'), t2=svg.querySelector('#pkt-t2'), t3=svg.querySelector('#pkt-t3');
+  const build=svg.querySelector('#snmp-build');
+  const mibRow=svg.querySelector('#mib-r0'), mibVal=svg.querySelector('#mib-v0');
+  const agent=svg.querySelector('#snmp-agent');
+  const cap=document.getElementById('snmp-cap');
+  const pn=document.getElementById('snmp-pn');
+
+  const LEFT=130, RIGHT=540, Y=150; // packet travel endpoints
+  let phase=0, anim=null, playing=false;
+
+  function setPkt(x,y){pkt.setAttribute('transform',`translate(${x},${y})`);}
+  function pktMode(kind){
+    if(kind==='req'){pktBox.setAttribute('stroke','#ffd23f');t1.textContent='GetRequest';t1.setAttribute('fill','#ffd23f');t2.textContent='OID ...7.1';t3.textContent='BER-encoded';}
+    else{pktBox.setAttribute('stroke','#33d6a6');t1.textContent='Response';t1.setAttribute('fill','#33d6a6');t2.textContent='value = 142';t3.textContent='BER-encoded';}
   }
-  render();
-  document.getElementById('snmp-next').onclick=()=>{if(step<snmpSteps.length-1){step++;render();}};
-  document.getElementById('snmp-reset').onclick=()=>{step=0;render();};
+  function clearAnim(){if(anim){cancelAnimationFrame(anim);anim=null;}}
+  function tween(from,to,ms,onframe,done){
+    clearAnim();const t0=performance.now();
+    function fr(now){const k=Math.min(1,(now-t0)/ms);const e=k<.5?2*k*k:1-Math.pow(-2*k+2,2)/2;onframe(from+(to-from)*e);if(k<1)anim=requestAnimationFrame(fr);else{anim=null;done&&done();}}
+    anim=requestAnimationFrame(fr);
+  }
+  function glow(el,on){el.style.transition='filter .3s';el.style.filter=on?'drop-shadow(0 0 7px var(--accent2))':'none';}
+  function highlightMib(on){
+    mibRow.setAttribute('fill',on?'rgba(51,214,166,.18)':'#161e2a');
+    mibRow.setAttribute('stroke',on?'#33d6a6':'#243140');
+    mibVal.setAttribute('fill',on?'#33d6a6':'#8b98a9');
+    mibVal.setAttribute('font-weight',on?'700':'400');
+  }
+
+  // render a phase as a STATIC end-state (used for prev/next/scrub)
+  function staticPhase(p){
+    clearAnim();
+    pn.textContent=p;
+    cap.innerHTML=SNMP_PHASES[p].cap;
+    // defaults
+    pkt.setAttribute('opacity','0'); build.setAttribute('opacity','0');
+    highlightMib(false); glow(agent.querySelector('rect'),false);
+    if(p>=1) build.setAttribute('opacity', p===1?'1':'0');
+    if(p===1){build.setAttribute('opacity','1');}
+    if(p===2){pktMode('req');setPkt(RIGHT,Y);pkt.setAttribute('opacity','1');}
+    if(p===3){pktMode('req');setPkt(RIGHT,Y);pkt.setAttribute('opacity','.25');highlightMib(true);glow(agent.querySelector('rect'),true);}
+    if(p===4){pktMode('res');setPkt(LEFT,Y);pkt.setAttribute('opacity','1');highlightMib(true);}
+    if(p===5){pkt.setAttribute('opacity','0');highlightMib(true);}
+    // re-attach glossary tooltips for any data-g inside the caption
+    if(window.attachGlossWithin) window.attachGlossWithin(cap);
+  }
+
+  // animate the TRANSITION into phase p (called by Play / Next)
+  function animateTo(p){
+    pn.textContent=p; cap.innerHTML=SNMP_PHASES[p].cap;
+    if(window.attachGlossWithin) window.attachGlossWithin(cap);
+    if(p===1){ // build bubble pops in
+      pkt.setAttribute('opacity','0'); highlightMib(false); glow(agent.querySelector('rect'),false);
+      build.setAttribute('opacity','0');
+      tween(0,1,420,v=>build.setAttribute('opacity',v),()=>chainMaybe(p));
+    } else if(p===2){ // packet flies right
+      build.setAttribute('opacity','1');pktMode('req');setPkt(LEFT,Y);pkt.setAttribute('opacity','1');
+      tween(LEFT,RIGHT,900,x=>setPkt(x,Y),()=>{build.setAttribute('opacity','0');chainMaybe(p);});
+    } else if(p===3){ // packet absorbed, MIB lights up
+      pktMode('req');setPkt(RIGHT,Y);pkt.setAttribute('opacity','1');
+      tween(1,.2,360,v=>pkt.setAttribute('opacity',v),()=>{
+        highlightMib(true);glow(agent.querySelector('rect'),true);
+        pulse(mibRow);chainMaybe(p);
+      });
+    } else if(p===4){ // response flies left
+      pktMode('res');setPkt(RIGHT,Y);pkt.setAttribute('opacity','1');
+      tween(RIGHT,LEFT,900,x=>setPkt(x,Y),()=>chainMaybe(p));
+    } else if(p===5){ // delivered
+      tween(1,0,360,v=>pkt.setAttribute('opacity',v),()=>{glow(agent.querySelector('rect'),false);chainMaybe(p);});
+    } else { staticPhase(0); chainMaybe(0); }
+  }
+  function pulse(el){el.style.transition='none';el.style.filter='drop-shadow(0 0 10px #33d6a6)';
+    setTimeout(()=>{el.style.transition='filter .5s';el.style.filter='drop-shadow(0 0 3px #33d6a6)';},120);}
+  function chainMaybe(p){ if(playing){ if(p<5){phase=p+1;setTimeout(()=>animateTo(phase),650);} else {playing=false;setPlay(false);} } }
+
+  function setPlay(on){document.getElementById('snmp-play').textContent=on?'⏸ Pause':'▶ Play';}
+
+  // controls
+  document.getElementById('snmp-play').onclick=()=>{
+    if(playing){playing=false;setPlay(false);clearAnim();return;}
+    playing=true;setPlay(true);
+    if(phase>=5)phase=0;
+    if(phase===0){phase=1;animateTo(1);} else {animateTo(phase);}
+  };
+  document.getElementById('snmp-next').onclick=()=>{playing=false;setPlay(false);if(phase<5){phase++;animateTo(phase);}};
+  document.getElementById('snmp-prev').onclick=()=>{playing=false;setPlay(false);if(phase>0){phase--;staticPhase(phase);}};
+  document.getElementById('snmp-reset').onclick=()=>{playing=false;setPlay(false);phase=0;staticPhase(0);};
+
+  staticPhase(0);
 }
 LAB_INIT.ch8={fn:initSNMP,done:false};
 
