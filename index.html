@@ -1,0 +1,1911 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CPE 314 — Networks Exam Lab (Ch. 7–13)</title>
+<style>
+:root{
+  --bg:#0d1117; --panel:#121821; --panel2:#161e2a; --ink:#e6edf3; --muted:#8b98a9;
+  --line:#243140; --accent:#ff7a1a; --accent2:#33d6a6; --blue:#4aa3ff; --violet:#b48cff;
+  --yellow:#ffd23f; --grid:rgba(74,163,255,.06); --good:#33d6a6; --bad:#ff5d5d;
+  --mono:'JetBrains Mono',ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+  --disp:'Space Mono',var(--mono); --body:'Inter',system-ui,sans-serif;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{
+  margin:0;font-family:var(--mono);background:var(--bg);color:var(--ink);
+  background-image:
+    linear-gradient(var(--grid) 1px,transparent 1px),
+    linear-gradient(90deg,var(--grid) 1px,transparent 1px);
+  background-size:32px 32px;
+  font-size:15px;line-height:1.6;
+}
+a{color:var(--blue);text-decoration:none}
+.app{display:grid;grid-template-columns:248px 1fr;min-height:100vh}
+
+/* Sidebar */
+.sidebar{
+  position:sticky;top:0;height:100vh;overflow-y:auto;
+  background:linear-gradient(180deg,#0a0e14,#0d1117);
+  border-right:1px solid var(--line);padding:20px 14px;
+}
+.brand{font-family:var(--mono);font-weight:700;font-size:15px;letter-spacing:.5px;color:var(--ink);margin-bottom:2px}
+.brand .tag{color:var(--accent)}
+.brand-sub{font-size:11px;color:var(--muted);margin-bottom:18px;letter-spacing:.5px}
+.navsec{font-size:10px;text-transform:uppercase;letter-spacing:1.5px;color:var(--muted);margin:16px 0 6px;padding-left:8px}
+.navlink{
+  display:flex;gap:10px;align-items:center;padding:8px 10px;border-radius:7px;
+  color:var(--muted);font-size:12.5px;cursor:pointer;transition:.15s;border:1px solid transparent;
+}
+.navlink:hover{background:var(--panel2);color:var(--ink)}
+.navlink.active{background:rgba(255,122,26,.12);color:var(--accent);border-color:rgba(255,122,26,.3)}
+.navlink .ch{font-size:10px;color:var(--accent);font-weight:700;min-width:26px}
+.progressbox{margin-top:18px;padding:10px;background:var(--panel);border:1px solid var(--line);border-radius:8px}
+.progressbox .lbl{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:1px}
+.bar{height:6px;background:#1c2733;border-radius:4px;margin-top:6px;overflow:hidden}
+.bar > i{display:block;height:100%;background:linear-gradient(90deg,var(--accent),var(--yellow));width:0%;transition:.4s}
+
+/* Main */
+.main{padding:34px 44px 80px;max-width:1100px}
+.crumb{font-size:11px;color:var(--muted);letter-spacing:1px;text-transform:uppercase;margin-bottom:6px}
+h1.title{font-family:var(--mono);font-size:30px;margin:0 0 4px;font-weight:700;letter-spacing:-.5px}
+h1.title .num{color:var(--accent)}
+.lead{color:var(--muted);font-size:14px;max-width:760px;margin-bottom:24px}
+.section{display:none;animation:fade .35s ease}
+.section.show{display:block}
+@keyframes fade{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+
+h2{font-family:var(--mono);font-size:19px;margin:32px 0 12px;display:flex;align-items:center;gap:10px;letter-spacing:-.2px}
+h2::before{content:"";width:14px;height:14px;background:var(--accent);clip-path:polygon(0 0,100% 0,100% 70%,70% 100%,0 100%);display:inline-block}
+h3{font-size:15px;margin:20px 0 8px;color:var(--yellow);font-family:var(--mono)}
+p{margin:8px 0}
+.kw{color:var(--accent2);font-weight:600;background:rgba(51,214,166,.08);padding:1px 5px;border-radius:4px;font-size:.95em;border:1px solid rgba(51,214,166,.18)}
+.kw[data-g]{cursor:help}
+.kw[data-g]:hover{background:rgba(51,214,166,.18);border-color:var(--accent2)}
+.term{color:var(--blue);font-weight:600;border-bottom:1px dashed rgba(74,163,255,.45);cursor:help}
+.term:hover{color:#7dc0ff;border-bottom-style:solid}
+
+.card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:18px 20px;margin:14px 0}
+.card.tinted{background:linear-gradient(135deg,rgba(255,122,26,.06),rgba(51,214,166,.04))}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+@media(max-width:820px){.grid2,.grid3{grid-template-columns:1fr}}
+
+.note{border-left:3px solid var(--accent);background:rgba(255,122,26,.06);padding:10px 14px;border-radius:0 8px 8px 0;margin:12px 0;font-size:13.5px}
+.note.cyan{border-color:var(--accent2);background:rgba(51,214,166,.06)}
+.note.blue{border-color:var(--blue);background:rgba(74,163,255,.06)}
+.exam{border-left:3px solid var(--yellow);background:rgba(255,210,63,.07);padding:10px 14px;border-radius:0 8px 8px 0;margin:12px 0;font-size:13px}
+.exam b{color:var(--yellow)}
+.trick{border-left:3px solid var(--violet);background:rgba(180,140,255,.08);padding:11px 14px 11px 42px;border-radius:0 8px 8px 0;margin:12px 0;font-size:13.5px;position:relative}
+.trick::before{content:"🧠";position:absolute;left:12px;top:10px;font-size:18px}
+.trick b{color:var(--violet)}
+.trick .hook{display:inline-block;background:rgba(180,140,255,.18);border:1px solid rgba(180,140,255,.4);color:#d9c4ff;font-weight:700;padding:1px 8px;border-radius:6px;margin:0 2px;font-family:var(--mono)}
+
+table{width:100%;border-collapse:collapse;margin:12px 0;font-size:13px}
+th,td{border:1px solid var(--line);padding:8px 10px;text-align:left}
+th{background:var(--panel2);color:var(--yellow);font-weight:600;font-size:12px;letter-spacing:.3px}
+tr:nth-child(even) td{background:rgba(255,255,255,.015)}
+
+.pill{display:inline-block;padding:2px 9px;border-radius:20px;font-size:11px;font-weight:600;letter-spacing:.3px}
+.pill.o{background:rgba(255,122,26,.15);color:var(--accent)}
+.pill.g{background:rgba(51,214,166,.15);color:var(--accent2)}
+.pill.b{background:rgba(74,163,255,.15);color:var(--blue)}
+.pill.v{background:rgba(180,140,255,.15);color:var(--violet)}
+
+button{font-family:var(--mono);cursor:pointer}
+.btn{background:var(--accent);color:#0d1117;border:none;padding:8px 16px;border-radius:7px;font-weight:700;font-size:13px;transition:.15s}
+.btn:hover{filter:brightness(1.1);transform:translateY(-1px)}
+.btn.ghost{background:transparent;border:1px solid var(--line);color:var(--ink)}
+.btn.ghost:hover{border-color:var(--accent);color:var(--accent)}
+.btn.sm{padding:5px 11px;font-size:12px}
+
+/* Interactive lab block */
+.lab{background:linear-gradient(160deg,#10161f,#0c1118);border:1px solid var(--line);border-radius:14px;padding:18px;margin:18px 0;position:relative;overflow:hidden}
+.lab::before{content:"INTERACTIVE";position:absolute;top:10px;right:12px;font-size:9px;letter-spacing:2px;color:var(--accent);opacity:.6}
+.lab h4{margin:0 0 4px;font-size:14px;color:var(--accent2);font-family:var(--mono)}
+.lab .desc{font-size:12px;color:var(--muted);margin-bottom:14px}
+.controls{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin:10px 0}
+input[type=range]{accent-color:var(--accent)}
+input[type=number],input[type=text],select{
+  background:var(--panel2);border:1px solid var(--line);color:var(--ink);
+  padding:6px 9px;border-radius:6px;font-family:var(--mono);font-size:13px
+}
+.readout{font-size:13px;color:var(--ink)}
+.readout b{color:var(--yellow)}
+.bigval{font-size:26px;color:var(--accent2);font-weight:700}
+
+/* Quiz */
+.quiz-q{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:16px;margin:12px 0}
+.quiz-q .qn{font-size:11px;color:var(--accent);letter-spacing:1px}
+.quiz-q .qt{font-weight:600;margin:6px 0 10px;font-size:14px}
+.opt{display:block;padding:9px 12px;margin:6px 0;border:1px solid var(--line);border-radius:8px;cursor:pointer;font-size:13px;transition:.12s}
+.opt:hover{border-color:var(--blue)}
+.opt.correct{border-color:var(--good);background:rgba(51,214,166,.12);color:var(--good)}
+.opt.wrong{border-color:var(--bad);background:rgba(255,93,93,.1);color:var(--bad)}
+.explain{font-size:12.5px;color:var(--muted);margin-top:8px;display:none;border-top:1px dashed var(--line);padding-top:8px}
+.explain.show{display:block}
+
+/* SVG diagram nodes */
+.node{cursor:pointer}
+svg text{font-family:var(--mono);fill:var(--ink)}
+
+.tooltip{position:fixed;background:#05080c;border:1px solid var(--accent);color:var(--ink);
+  padding:8px 11px;border-radius:7px;font-size:12px;max-width:260px;z-index:99;pointer-events:none;
+  box-shadow:0 8px 30px rgba(0,0,0,.6);display:none;line-height:1.45}
+.tooltip b{color:var(--accent)}
+
+.flow-step{display:flex;gap:12px;align-items:flex-start;padding:10px 0;border-bottom:1px dashed var(--line)}
+.flow-step .n{min-width:26px;height:26px;border-radius:50%;background:var(--accent);color:#0d1117;display:grid;place-items:center;font-weight:700;font-size:13px}
+.flow-step .n.alt{background:var(--accent2)}
+
+.tabs{display:flex;gap:6px;margin:12px 0;flex-wrap:wrap}
+.tab{padding:7px 13px;border:1px solid var(--line);border-radius:7px;font-size:12.5px;color:var(--muted);cursor:pointer}
+.tab.active{background:var(--accent);color:#0d1117;border-color:var(--accent);font-weight:700}
+.tabpane{display:none}
+.tabpane.show{display:block}
+
+.cmp{display:grid;grid-template-columns:1fr 1fr;gap:0;border:1px solid var(--line);border-radius:10px;overflow:hidden}
+.cmp > div{padding:14px 16px}
+.cmp .left{background:rgba(74,163,255,.05);border-right:1px solid var(--line)}
+.cmp .right{background:rgba(255,122,26,.05)}
+.cmp h5{margin:0 0 8px;font-size:13px}
+.cmp ul{margin:0;padding-left:16px;font-size:12.5px;color:var(--muted)}
+.cmp li{margin:4px 0}
+
+.keymap{display:flex;flex-wrap:wrap;gap:8px;margin:10px 0}
+.keymap span{font-size:11px;background:var(--panel2);border:1px solid var(--line);padding:4px 10px;border-radius:20px;color:var(--accent2)}
+
+footer{color:var(--muted);font-size:11px;margin-top:40px;border-top:1px solid var(--line);padding-top:14px}
+.topbtn{position:fixed;bottom:20px;right:20px;background:var(--accent);color:#0d1117;border:none;width:44px;height:44px;border-radius:50%;font-size:18px;display:none;z-index:50}
+@media(max-width:720px){.app{grid-template-columns:1fr}.sidebar{position:relative;height:auto}.main{padding:20px}}
+</style>
+</head>
+<body>
+<div class="app">
+  <aside class="sidebar">
+    <div class="brand">NET<span class="tag">·</span>LAB</div>
+    <div class="brand-sub">CPE 314 · EXAM PREP · CH 7–13</div>
+    <nav id="nav"></nav>
+    <div class="progressbox">
+      <div class="lbl">Quiz progress</div>
+      <div class="bar"><i id="pbar"></i></div>
+      <div style="font-size:11px;color:var(--muted);margin-top:6px" id="ptxt">0 / 0 answered</div>
+    </div>
+  </aside>
+  <main class="main" id="main"></main>
+</div>
+<div class="tooltip" id="tip"></div>
+<button class="topbtn" id="topbtn" title="Back to top">↑</button>
+<script>
+// ============ NAV STRUCTURE ============
+const SECTIONS = [
+  {id:'home', ch:'', label:'Start Here', group:'OVERVIEW'},
+  {id:'ch7', ch:'7', label:'Unicast Routing', group:'NETWORK LAYER'},
+  {id:'ch8', ch:'8', label:'Network Management', group:'NETWORK LAYER'},
+  {id:'ch9', ch:'9', label:'Link Layer & MAC', group:'DATA-LINK LAYER'},
+  {id:'ch10', ch:'10', label:'Ethernet LANs', group:'DATA-LINK LAYER'},
+  {id:'ch11', ch:'11', label:'SDN', group:'PROGRAMMABLE'},
+  {id:'ch12', ch:'12', label:'Wireless & Mobile IP', group:'WIRELESS'},
+  {id:'ch13', ch:'13', label:'Physical Layer & Media', group:'PHYSICAL LAYER'},
+  {id:'mock', ch:'✎', label:'Mock Exam (40 Q)', group:'REVIEW'},
+  {id:'tricks', ch:'🧠', label:'Memory Tricks', group:'REVIEW'},
+  {id:'cheat', ch:'★', label:'Cheat Sheet', group:'REVIEW'},
+];
+
+// ============ GLOSSARY (for hover tooltips) ============
+// data-g keys map here. Used by both .term (blue dashed) and .kw[data-g] (green keyword).
+const GLOSS = {
+  // --- Ch7 routing ---
+  'datagram':'A packet at the network (IP) layer — self-contained and independently routed, carrying its own source & destination IP. Connectionless: best-effort, may arrive out of order.',
+  'unicast routing':'One-to-one delivery — routing a datagram to a single destination (vs multicast/broadcast).',
+  'AS':'Autonomous System — a large network or group of networks under one unified routing policy. The Internet is a collection of ASes.',
+  'RIP':'Routing Information Protocol — distance-vector, uses HOP COUNT as its metric (max 15; 16 = infinity/unreachable).',
+  'OSPF':'Open Shortest Path First — link-state protocol that uses Dijkstra to build least-cost trees within ONE Autonomous System.',
+  'BGP':'Border Gateway Protocol — path-vector, the INTERDOMAIN (between-AS) routing protocol of the Internet.',
+  'LSDB':'Link-State Database — every router floods its link costs so all routers build an IDENTICAL map of the whole network.',
+  'Bellman-Ford':'The equation behind distance-vector: distance(x→y) = min over neighbors v of [cost(x,v) + distance(v,y)].',
+  'Dijkstra':'Shortest-path algorithm used by link-state routing (OSPF) to compute the least-cost tree from the LSDB.',
+  'least-cost tree':'The cheapest set of paths from one root node to every other node — what each routing algorithm computes.',
+  'hop count':'A routing metric = number of routers (hops) a packet crosses. Used by RIP. Note: no hop is counted for a directly-connected network.',
+  'forwarding table':'The table a router consults to decide the next hop for a datagram. Only routers need one — source & destination hosts use their default router.',
+  'count-to-infinity':'A distance-vector problem where bad news (a failed link) propagates slowly, with distances slowly counting up. RIP caps it at 16 = infinity.',
+  // --- Ch8 management ---
+  'SNMP':'Simple Network Management Protocol — a manager (client) controls a set of agents (servers) over TCP/IP; defines the PDU packet formats.',
+  'SMI':'Structure of Management Information — the GUIDELINE/RULES: names objects (OID), defines data types, and the encoding method (BER).',
+  'MIB':'Management Information Base — the actual COLLECTION of named objects an agent stores; walked in lexicographic order.',
+  'OID':'Object Identifier — a hierarchical, tree-structured name, e.g. the udp group = 1.3.6.1.2.1.7.',
+  'BER':'Basic Encoding Rules — how SMI serializes object values onto the wire.',
+  'manager':'The SNMP client (usually a host) that monitors and controls the network.',
+  'agent':'The SNMP server (a router or host) that holds the MIB and responds to the manager.',
+  'Trap':'An UNSOLICITED SNMP message sent from agent to manager to report that an event happened.',
+  // --- Ch9 link layer ---
+  'DLC':'Data Link Control — the upper data-link sublayer. Functions: framing, flow control, error control (ARQ) & error detection. Works on ANY link.',
+  'MAC':'Media Access Control — the lower data-link sublayer that arbitrates WHO transmits on a shared (broadcast) medium.',
+  'framing':'Packing bits into frames so each frame is distinguishable from the next, using delimiters/flags.',
+  'byte stuffing':'In variable-size framing, a special escape byte is inserted before any data byte that accidentally matches the flag pattern, so it is not mistaken for a frame boundary.',
+  'flag':'A special byte/bit pattern marking the start and end of a frame.',
+  'flow control':'Procedures that limit how much data a sender transmits before it must wait for an acknowledgment.',
+  'error control':'Detecting and correcting frame corruption — in the data-link layer it is based on ARQ (retransmission).',
+  'ARQ':'Automatic Repeat reQuest — error control by retransmitting lost/corrupted frames.',
+  'CSMA':'Carrier Sense Multiple Access — "sense before transmit": listen to the medium before sending to reduce (not remove) collisions.',
+  'CSMA/CD':'CSMA with Collision Detection — abort the moment a collision is heard (used in wired Ethernet).',
+  'CSMA/CA':'CSMA with Collision Avoidance — used in wireless, where collisions can’t be reliably detected; uses IFS, RTS/CTS, NAV & ACK.',
+  'persistence':'The rule a CSMA station follows when the medium is busy: 1-persistent, non-persistent, or p-persistent.',
+  'propagation delay':'Time for a signal to travel the medium. It is WHY collisions can still happen in CSMA — a far station may not yet hear an ongoing transmission.',
+  'ALOHA':'The earliest random-access method (1970s). Pure ALOHA sends anytime (~18% efficiency); Slotted ALOHA only at slot starts (~37%).',
+  'token passing':'A controlled-access method: a special token circulates a logical ring; only the token-holder may transmit.',
+  'polling':'A controlled-access method where a primary device controls the link — Select (primary sends) and Poll (primary asks secondaries).',
+  'NAV':'Network Allocation Vector — a virtual carrier-sense countdown timer other stations set during CSMA/CA so they stay silent.',
+  'FDMA':'Frequency-Division Multiple Access — channelization by frequency band.',
+  'TDMA':'Time-Division Multiple Access — channelization by time slot.',
+  'CDMA':'Code-Division Multiple Access — all stations share one band, separated by orthogonal codes.',
+  'CRC':'Cyclic Redundancy Check — a strong polynomial-division error-detection code placed in the frame trailer.',
+  // --- Ch10 ethernet ---
+  'VLAN':'Virtual LAN — a broadcast domain defined by SOFTWARE, not physical wiring. Membership by port, MAC, IP or IP-multicast.',
+  'LLC':'Logical Link Control — the upper Ethernet sublayer (flow/error control & interface to the network layer).',
+  '802.1Q':'IEEE tag added to frames crossing a VLAN trunk so the receiving switch knows which VLAN a frame belongs to.',
+  'repeater':'A layer-1 device that only regenerates (boosts) signal strength to extend distance — it does NOT filter or read addresses.',
+  'hub':'A multiport repeater — forwards bits to ALL ports (one collision domain). Layer 1.',
+  'bridge':'A layer-2 device that filters/forwards frames by MAC address, separating collision domains.',
+  'transparent switch':'A layer-2 switch that builds its forwarding table automatically by learning source MACs — "transparent" because hosts need no configuration.',
+  'preamble':'7 bytes of alternating 1/0 at the start of an Ethernet frame to synchronize the receiver’s clock.',
+  'SFD':'Start Frame Delimiter — 1 byte (10101011) signalling the real frame begins now.',
+  // --- Ch11 SDN ---
+  'SDN':'Software-Defined Networking — separates the CONTROL plane (decisions) from the DATA plane (forwarding), running control centrally on a controller.',
+  'control plane':'The "brain" — decides HOW packets should be forwarded. In SDN it is pulled out of switches into a central controller.',
+  'data plane':'The "muscle" — performs the actual movement of packets, following the flow tables it is given.',
+  'controller':'The SDN "network operating system" holding network-wide state (link/host/switch info, flow tables, statistics).',
+  'northbound API':'Interface between network-control apps and the controller (e.g. HTTP REST). Faces UP toward the apps.',
+  'southbound API':'Interface between the controller and the switches (e.g. OpenFlow over TCP 6653, also SNMP). Faces DOWN toward switches.',
+  'OpenFlow':'The dominant southbound protocol; runs over TCP port 6653; defines controller↔switch messages.',
+  'flow table':'A switch’s match-plus-action table: match packet fields, then forward / drop / modify-field.',
+  // --- Ch12 wireless ---
+  'BSS':'Basic Service Set — the building block of an 802.11 WLAN: stations plus (usually) one access point (AP).',
+  'ESS':'Extended Service Set — two or more BSSs joined by APs and a distribution system, enabling roaming.',
+  'DCF':'Distributed Coordination Function — the basic 802.11 MAC access method, using CSMA/CA.',
+  'PCF':'Point Coordination Function — an optional, infrastructure-only 802.11 access method using polling for time-sensitive traffic.',
+  'piconet':'A Bluetooth network (one master + up to 7 active slaves).',
+  'scatternet':'Two or more linked piconets.',
+  'home agent':'A router on the mobile’s home network that intercepts packets and tunnels them to the mobile’s care-of address.',
+  'foreign agent':'A router on the visited network that delivers tunneled packets to a roaming mobile.',
+  'care-of address':'The temporary address a mobile obtains on a foreign network, registered with its home agent.',
+  'triangle routing':'Mobile IP inefficiency: packets reach the mobile the long way (via the home agent) but replies go directly back — forming a triangle.',
+  'WiMAX':'Worldwide Interoperability for Microwave Access — IEEE 802.16 (fixed) / 802.16e (mobile); a "last-mile" broadband alternative to DSL/cable.',
+  'hidden terminal':'Two senders that can’t hear each other but both reach the receiver, causing collisions — solved by RTS/CTS.',
+  // --- Ch13 physical ---
+  'SNR':'Signal-to-Noise Ratio — average signal power ÷ average noise power. In dB: SNR(dB)=10·log₁₀(SNR).',
+  'Nyquist':'Noiseless-channel bit-rate limit: BitRate = 2·B·log₂L, where B=bandwidth, L=number of signal levels.',
+  'Shannon':'Noisy-channel capacity ceiling: C = B·log₂(1+SNR).',
+  'attenuation':'Signal LOSES energy as it travels — fixed with amplifiers/repeaters. Measured in dB.',
+  'distortion':'Signal CHANGES shape because different frequency components travel at different speeds.',
+  'multiplexing':'A set of techniques that send multiple signals over one link simultaneously (FDM, WDM, TDM).',
+  'FDM':'Frequency-Division Multiplexing — combines ANALOG signals into different frequency bands.',
+  'WDM':'Wavelength-Division Multiplexing — FDM for light, used in fiber optics.',
+  'TDM':'Time-Division Multiplexing — interleaves DIGITAL signals into time slots. Synchronous = fixed slots; Statistical = slots on demand.',
+  'guided media':'Wired media with a physical conductor: twisted-pair & coax (electric current) and fiber (light).',
+  'unguided media':'Wireless media — electromagnetic waves through free space (radio, microwave, infrared); no conductor.',
+  'critical angle':'In fiber, the incidence angle above which light reflects totally inside the core (total internal reflection).',
+  'single-mode':'A fiber type with a tiny core that carries one light path — least dispersion, best for long-haul.',
+};
+
+// ============ CHAPTER CONTENT ============
+const C = {};
+
+// ---------- HOME ----------
+C.home = `
+<div class="crumb">CPE 314 · COMPUTER NETWORKS</div>
+<h1 class="title">Networks <span class="num">Exam Lab</span></h1>
+<p class="lead">An interactive walkthrough of <b>Chapters 7–13</b> — routing, network management, the link layer, Ethernet, SDN, wireless/Mobile IP and the physical layer. Read the plain-English explanation, play with the live simulators, then test yourself with the quiz at the end of every chapter. Keywords you'll be expected to know are <span class="kw">highlighted like this</span>.</p>
+
+<div class="grid3">
+  <div class="card tinted"><span class="pill o">7–8</span><h3 style="margin-top:8px">Network Layer</h3><p style="font-size:13px;color:var(--muted)">How routers find paths (DV, LS, PV) and how we manage devices with SNMP/SMI/MIB.</p></div>
+  <div class="card tinted"><span class="pill g">9–10</span><h3 style="margin-top:8px">Data-Link Layer</h3><p style="font-size:13px;color:var(--muted)">Framing, error detection, who-talks-when (MAC), and Ethernet evolution + VLANs.</p></div>
+  <div class="card tinted"><span class="pill b">11–13</span><h3 style="margin-top:8px">SDN · Wireless · PHY</h3><p style="font-size:13px;color:var(--muted)">Programmable networks, 802.11 + Mobile IP, and signals, limits & cabling.</p></div>
+</div>
+
+<div class="note blue"><b>How to use this:</b> Click a chapter on the left. Hover any <span class="term" data-g="AS">dashed term</span> for a quick definition. Try every <b style="color:var(--accent2)">INTERACTIVE</b> block — they're built to drill the exact concepts exams love (routing tables, CRC, Nyquist/Shannon, Mobile IP phases…). Your quiz score tracker is bottom-left.</p></div>
+
+<h2>The 7-chapter map in one breath</h2>
+<div class="card">
+<div class="flow-step"><div class="n">7</div><div><b>Unicast Routing</b> — A router's job is to move a datagram toward its destination. It builds a <span class="kw">least-cost tree</span> using one of three families: <span class="kw">Distance-Vector</span> (Bellman-Ford, RIP), <span class="kw">Link-State</span> (Dijkstra, OSPF), or <span class="kw">Path-Vector</span> (policy-based, BGP).</div></div>
+<div class="flow-step"><div class="n">8</div><div><b>Network Management</b> — Once the network runs, you must watch and configure it. <span class="kw">SNMP</span> lets a <span class="kw">manager</span> poll <span class="kw">agents</span>, using <span class="kw">SMI</span> (naming/typing) and <span class="kw">MIB</span> (the object store).</div></div>
+<div class="flow-step"><div class="n alt">9</div><div><b>Link Layer</b> — Splits into <span class="kw">DLC</span> (framing + error/flow control) and <span class="kw">MAC</span> (who gets the shared medium: random / controlled / channelization).</div></div>
+<div class="flow-step"><div class="n alt">10</div><div><b>Ethernet LANs</b> — The dominant wired LAN. Standard→Fast→Gigabit→10G, all keeping the same <span class="kw">frame format</span>. Plus switches and <span class="kw">VLANs</span>.</div></div>
+<div class="flow-step"><div class="n">11</div><div><b>SDN</b> — Rip the brain out of each switch. Separate the <span class="kw">control plane</span> from the <span class="kw">data plane</span> and run it on a central <span class="kw">controller</span> programmed via <span class="kw">north/southbound APIs</span>.</div></div>
+<div class="flow-step"><div class="n">12</div><div><b>Wireless & Mobile IP</b> — <span class="kw">802.11</span> WLANs (BSS/ESS, CSMA/CA), Bluetooth, WiMAX, and how a host keeps its IP while roaming via <span class="kw">home/foreign agents</span>.</div></div>
+<div class="flow-step" style="border:none"><div class="n">13</div><div><b>Physical Layer & Media</b> — Turning bits into signals: bandwidth, <span class="kw">Nyquist</span> & <span class="kw">Shannon</span> limits, impairments, multiplexing, and guided vs unguided media.</div></div>
+</div>
+`;
+
+// ---------- CHAPTER 7: ROUTING ----------
+C.ch7 = `
+<div class="crumb">NETWORK LAYER · WEEK 7</div>
+<h1 class="title"><span class="num">07</span> Unicast Routing</h1>
+<p class="lead">The network layer's goal is to deliver a datagram from source to destination. When there's exactly one destination (one-to-one), that's <span class="kw">unicast routing</span>. Routers cooperate to discover the <span class="kw">least-cost path</span> through the internet, which we model as a weighted graph.</p>
+
+<h2>The internet as a graph</h2>
+<div class="card">
+<p>Model the network as nodes (routers) and weighted edges (links). The cost of a route is the sum of edge weights. Every algorithm here is really just <i>"find the cheapest tree rooted at me to everyone else."</i> They differ only in <b>what info each router has</b> and <b>how it builds that tree</b>.</p>
+<div class="keymap"><span>Least-cost routing</span><span>Least-cost tree</span><span>Graph = nodes + weighted edges</span></div>
+</div>
+
+<h2>The three routing families</h2>
+<div class="grid3">
+  <div class="card"><span class="pill b">DISTANCE-VECTOR</span><h3 style="margin-top:8px">"Tell neighbors my distances"</h3><p style="font-size:13px">Each router knows only <b>local</b> info. Uses the <span class="kw">Bellman-Ford</span> equation, shares its whole <span class="kw">distance vector</span> with direct neighbors periodically. → <span class="term" data-g="RIP">RIP</span>.</p></div>
+  <div class="card"><span class="pill o">LINK-STATE</span><h3 style="margin-top:8px">"Everyone knows the whole map"</h3><p style="font-size:13px">Each router floods its link costs so all build an identical <span class="term" data-g="LSDB">LSDB</span>, then runs <span class="kw">Dijkstra</span> locally. → <span class="term" data-g="OSPF">OSPF</span>.</p></div>
+  <div class="card"><span class="pill v">PATH-VECTOR</span><h3 style="margin-top:8px">"Cheapest isn't always allowed"</h3><p style="font-size:13px">Source picks the best path using <span class="kw">policy</span>, carrying the full path to avoid loops. → <span class="term" data-g="BGP">BGP</span>.</p></div>
+</div>
+
+<h3>Bellman-Ford in one line</h3>
+<div class="note cyan">Distance from <b>x</b> to <b>y</b> = the minimum, over every neighbor <b>v</b>, of <code>cost(x,v) + distance(v,y)</code>. In words: <i>"the cheapest way to reach y is to step to my best neighbor and use their best-known distance to y."</i> This is the heart of distance-vector.</div>
+
+<div class="trick"><b>Memory trick — which algorithm goes with which?</b><br>
+Remember <span class="hook">LSD</span> = <b>L</b>ink-<b>S</b>tate uses <b>D</b>ijkstra. By elimination, Distance-Vector uses Bellman-Ford.<br>
+And: <i>"Bellman asks his Buddies, Dijkstra sees the Diagram."</i> → Bellman-Ford only knows neighbors (<b>local</b>); Dijkstra needs the whole map / LSDB (<b>global</b>).</div>
+
+<div class="lab" id="lab-dv">
+  <h4>⚙ Distance-Vector convergence simulator</h4>
+  <div class="desc">A 4-router network (A–B–C–D in a line + a shortcut). Click <b>Exchange Round</b> to let each router share its vector with neighbors. Watch distances converge to the true least cost.</div>
+  <div id="dv-graph"></div>
+  <div class="controls">
+    <button class="btn sm" id="dv-step">▶ Exchange Round</button>
+    <button class="btn sm ghost" id="dv-reset">↺ Reset</button>
+    <span class="readout">Round: <b id="dv-round">0</b> · <span id="dv-state" style="color:var(--accent2)">Only direct links known</span></span>
+  </div>
+  <div id="dv-tables"></div>
+</div>
+
+<h2>Distance-Vector vs Link-State (exam favourite)</h2>
+<div class="cmp">
+  <div class="left"><h5 style="color:var(--blue)">Distance-Vector</h5><ul>
+    <li>Bandwidth: <b>less</b> (share with neighbors only, no flooding)</li>
+    <li>Knowledge: <b>local</b> — only what neighbors report</li>
+    <li>Algorithm: <b>Bellman-Ford</b></li>
+    <li>Converges <b>slowly</b> — "good news fast, bad news slow"</li>
+    <li>Suffers <b>count-to-infinity</b></li>
+  </ul></div>
+  <div class="right"><h5 style="color:var(--accent)">Link-State</h5><ul>
+    <li>Bandwidth: <b>more</b> (floods large LSPs)</li>
+    <li>Knowledge: <b>global</b> — full network map (LSDB)</li>
+    <li>Algorithm: <b>Dijkstra</b></li>
+    <li>Converges <b>faster</b></li>
+    <li><b>No</b> count-to-infinity</li>
+  </ul></div>
+</div>
+
+<h2>Intradomain vs Interdomain & real protocols</h2>
+<div class="card">
+<p>The Internet is hierarchical: each ISP is an <span class="term" data-g="AS">Autonomous System (AS)</span> with its own policy. Inside an AS you run an <b>intradomain</b> protocol; between ASes you run an <b>interdomain</b> protocol.</p>
+<table>
+<tr><th>Protocol</th><th>Family</th><th>Scope</th><th>Metric / key idea</th></tr>
+<tr><td><span class="term" data-g="RIP">RIP</span></td><td>Distance-Vector</td><td>Intradomain</td><td><span class="kw">Hop count</span>, max <b>15</b> hops (16 = ∞, prevents loops)</td></tr>
+<tr><td><span class="term" data-g="OSPF">OSPF</span></td><td>Link-State</td><td>Intradomain (within one AS)</td><td>Dijkstra least-cost tree, configurable metric</td></tr>
+<tr><td><span class="term" data-g="BGP">BGP</span></td><td>Path-Vector</td><td>Interdomain</td><td>Policy-based best path, carries AS path (loop-free)</td></tr>
+</table>
+</div>
+<div class="exam"><b>Exam trap:</b> RIP's "15 max hops" isn't a network-size limit for fun — the <b>16th</b> hop means <i>unreachable (infinity)</i>, which is how RIP caps the count-to-infinity problem.</div>
+
+<div class="trick"><b>Memory tricks for the protocols</b><br>
+• <span class="hook">RIP rests at 16</span> — RIP counts hops up to 15; <b>16 = infinity = the route is dead (R.I.P.)</b>.<br>
+• <span class="hook">BGP = Between Gateways' Politics</span> — <b>B</b>order <b>G</b>ateway <b>P</b>rotocol is the <b>between-AS (interdomain)</b> protocol and is <b>policy</b>-based.<br>
+• <span class="hook">OSPF lives at home</span> — OSPF is <b>intra</b>domain (inside one AS), the "open" link-state choice.</div>
+
+<div class="note"><b>Why path-vector exists:</b> least-cost routing can't stop a packet from crossing an AS you don't want it to (e.g. for policy/political reasons). Path-vector lets the <b>source decide</b> based on policy, not just cost — and by carrying the whole path, a router can reject any path that already contains itself (loop prevention).</div>
+
+<h2>Why is routing the network layer's job? (2017 B1)</h2>
+<div class="card">
+<p>Routing happens at the <b>network layer</b> — not transport or data-link — because:</p>
+<table>
+<tr><th>Layer</th><th>Scope of delivery</th><th>Why it can't route end-to-end</th></tr>
+<tr><td>Data-link</td><td><b>Node-to-node</b> (one hop)</td><td>Only sees the next adjacent node; no global addressing across networks.</td></tr>
+<tr><td><b>Network</b></td><td><b>Host-to-host</b> across networks</td><td>✓ Has global IP addressing & forwarding tables — the only layer that sees the whole internetwork path.</td></tr>
+<tr><td>Transport</td><td><b>Process-to-process</b></td><td>Assumes the packet already arrived at the host; doesn't deal with intermediate routers at all.</td></tr>
+</table>
+<p style="font-size:13px;color:var(--muted)">In short: only the network layer has both the <b>global addressing</b> and the <b>per-hop forwarding tables</b> needed to move a <span class="kw" data-g="datagram">datagram</span> across many networks.</p>
+</div>
+
+<div id="quiz-ch7"></div>
+`;
+
+// ---------- CHAPTER 8: NETWORK MANAGEMENT ----------
+C.ch8 = `
+<div class="crumb">NETWORK LAYER · WEEK 8</div>
+<h1 class="title"><span class="num">08</span> Network Management</h1>
+<p class="lead">Once a network runs, someone has to watch it, fix it, and tune it. <span class="kw">Network management</span> covers five areas, and on the Internet it's done with one dominant standard: <span class="term" data-g="SNMP">SNMP</span>, which leans on two helpers — <span class="term" data-g="SMI">SMI</span> and <span class="term" data-g="MIB">MIB</span>.</p>
+
+<h2>The five areas of network management</h2>
+<div class="grid3">
+  <div class="card"><span class="pill b">CONFIG</span><p style="font-size:13px;margin-top:6px"><b>Configuration</b> — track & set device settings.</p></div>
+  <div class="card"><span class="pill o">FAULT</span><p style="font-size:13px;margin-top:6px"><b>Fault</b> — detect, isolate, fix failures.</p></div>
+  <div class="card"><span class="pill g">PERFORMANCE</span><p style="font-size:13px;margin-top:6px"><b>Performance</b> — monitor throughput, utilization, delay.</p></div>
+  <div class="card"><span class="pill v">ACCOUNTING</span><p style="font-size:13px;margin-top:6px"><b>Accounting</b> — who uses what (for billing/quotas).</p></div>
+  <div class="card"><span class="pill o">SECURITY</span><p style="font-size:13px;margin-top:6px"><b>Security</b> — control access & protect data.</p></div>
+  <div class="card tinted"><p style="font-size:12px;margin-top:6px">Memory hook: <b style="color:var(--yellow)">C-F-P-A-S</b></p></div>
+</div>
+
+<div class="trick"><b>Memory tricks for management</b><br>
+• 5 areas <span class="hook">"Cats Fight, People Argue, Stop!"</span> → <b>C</b>onfiguration, <b>F</b>ault, <b>P</b>erformance, <b>A</b>ccounting, <b>S</b>ecurity.<br>
+• The trio: <span class="hook">SMI names it · MIB keeps it · SNMP moves it</span>. (SM<b>I</b> = <b>I</b>dentify/name, M<b>I</b>B = the data<b>B</b>ase, SN<b>M</b>P = <b>M</b>essages.)<br>
+• <span class="hook">A TRAP is sprung</span> — nobody asked for it. Trap = the <b>only unsolicited</b> message, agent → manager.</div>
+
+<h2>The 3 cooperating protocols</h2>
+<div class="card">
+<p>Management on the Internet = teamwork of three. A <span class="kw">manager</span> (host running SNMP client) controls a set of <span class="kw">agents</span> (routers/hosts running SNMP server).</p>
+<table>
+<tr><th>Protocol</th><th>Role (memorize the verbs!)</th></tr>
+<tr><td><b style="color:var(--accent)">SNMP</b></td><td>Defines the <b>format of packets</b> (PDUs) swapped between manager & agent; reads and changes object values.</td></tr>
+<tr><td><b style="color:var(--blue)">SMI</b></td><td><b>Names</b> objects (OID), defines <b>data types</b> (range/length) & the <b>encoding</b> method (BER). It's the <i>guideline / rules</i>.</td></tr>
+<tr><td><b style="color:var(--accent2)">MIB</b></td><td>The actual <b>collection of named objects</b> and their relationships in a managed entity. The <i>database</i>.</td></tr>
+</table>
+</div>
+<div class="note cyan"><b>Analogy:</b> Think of a spreadsheet. <span class="kw">SMI</span> = the rules for naming columns and what type each holds. <span class="kw">MIB</span> = the actual filled-in sheet of values. <span class="kw">SNMP</span> = the messages you send to read/write a cell.</div>
+
+<div class="lab" id="lab-snmp">
+  <h4>⚙ SNMP request walkthrough</h4>
+  <div class="desc">A manager wants to know how many UDP datagrams an agent received. Step through the exchange and see how SNMP, SMI and MIB each play a part.</div>
+  <div id="snmp-stage"></div>
+  <div class="controls">
+    <button class="btn sm" id="snmp-next">▶ Next step</button>
+    <button class="btn sm ghost" id="snmp-reset">↺ Reset</button>
+  </div>
+</div>
+
+<h2>SMI — the three attributes of an object</h2>
+<div class="grid3">
+  <div class="card"><h3 style="margin-top:0">① Name</h3><p style="font-size:13px">An <span class="term" data-g="OID">Object Identifier (OID)</span> — a hierarchical name from a tree, e.g. the udp group is <code>1.3.6.1.2.1.7</code>.</p></div>
+  <div class="card"><h3 style="margin-top:0">② Type</h3><p style="font-size:13px">The data type stored in the object (with range & length).</p></div>
+  <div class="card"><h3 style="margin-top:0">③ Encoding</h3><p style="font-size:13px"><span class="kw">BER</span> (Basic Encoding Rules) — how the value is serialized onto the wire.</p></div>
+</div>
+
+<h3>Accessing MIB variables (the OID trick)</h3>
+<div class="card">
+<p>Use the <b>udp group</b> (<code>1.3.6.1.2.1.7</code>) as the example:</p>
+<table>
+<tr><th>Kind</th><th>How to build the OID</th><th>Example</th></tr>
+<tr><td><b>Simple variable</b></td><td>group ID <b>+</b> variable ID</td><td><code>udpInDatagrams → ...7.1</code></td></tr>
+<tr><td><b>Table entry</b></td><td>table ID <b>+</b> column <b>+</b> row index</td><td><code>udpLocalAddress → ...7.5.1.1</code></td></tr>
+</table>
+<p style="font-size:12.5px;color:var(--muted)">MIB uses <span class="kw">lexicographic ordering</span> to walk its variables — that's what makes <code>GetNextRequest</code> able to "walk the tree."</p>
+</div>
+
+<h2>SNMP PDUs (the message types)</h2>
+<div class="keymap" style="margin-bottom:10px">
+<span>GetRequest</span><span>GetNextRequest</span><span>GetBulkRequest</span><span>SetRequest</span><span>Response</span><span>Trap</span><span>InformRequest</span><span>Report</span>
+</div>
+<table>
+<tr><th>PDU</th><th>Who sends</th><th>Purpose</th></tr>
+<tr><td>GetRequest</td><td>Manager→Agent</td><td>Read one/more variables</td></tr>
+<tr><td>GetNextRequest</td><td>Manager→Agent</td><td>Read the <i>next</i> variable (walk the MIB)</td></tr>
+<tr><td>GetBulkRequest</td><td>Manager→Agent</td><td>Retrieve large blocks efficiently</td></tr>
+<tr><td>SetRequest</td><td>Manager→Agent</td><td>Write/change a variable</td></tr>
+<tr><td>Response</td><td>Agent→Manager</td><td>Reply with values</td></tr>
+<tr><td><b style="color:var(--accent)">Trap</b></td><td>Agent→Manager</td><td><b>Unsolicited</b> alert (event happened!)</td></tr>
+<tr><td>InformRequest</td><td>Manager→Manager</td><td>Manager-to-manager info</td></tr>
+</table>
+
+<h3>SNMPv3 security (USM + VACM)</h3>
+<div class="note blue">SNMPv3 keeps the same PDUs/SMI/MIB but wraps them in security. <span class="kw">USM</span> (User-based Security Model) = per-user <b>authentication</b> (HMAC-MD5/SHA) + <b>privacy</b> (DES/AES) + replay protection. <span class="kw">VACM</span> (View-based Access Control Model) = which parts of the MIB a user may read/write.</div>
+
+<div id="quiz-ch8"></div>
+`;
+
+// ---------- CHAPTER 9: LINK LAYER ----------
+C.ch9 = `
+<div class="crumb">DATA-LINK LAYER · WEEK 9</div>
+<h1 class="title"><span class="num">09</span> Link Layer · Framing, Errors & MAC</h1>
+<p class="lead">The data-link layer moves frames between <b>two adjacent nodes</b>. It splits into two sublayers: <span class="term" data-g="DLC">DLC</span> (works on any link) and <span class="term" data-g="MAC">MAC</span> (only matters on shared/broadcast links — who gets to talk?).</p>
+
+<h2>Two sublayers</h2>
+<div class="cmp">
+  <div class="left"><h5 style="color:var(--blue)">DLC — Data Link Control</h5><ul>
+    <li>Common to point-to-point <b>and</b> broadcast links</li>
+    <li><b>Framing</b> — pack bits so frames are distinguishable</li>
+    <li><b>Flow control</b> — limit how much sender sends before an ACK</li>
+    <li><b>Error control</b> — based on <span class="kw">ARQ</span> (retransmission)</li>
+    <li>Error detection & correction</li>
+  </ul></div>
+  <div class="right"><h5 style="color:var(--accent)">MAC — Media Access Control</h5><ul>
+    <li>Only for <b>shared (broadcast)</b> links</li>
+    <li>Decides <b>who transmits when</b></li>
+    <li>3 families: random, controlled, channelization</li>
+  </ul></div>
+</div>
+
+<h2>Framing — fixed vs variable size (exam topic)</h2>
+<p>The data-link layer must mark where each frame starts and ends. Two strategies:</p>
+<div class="cmp">
+  <div class="left"><h5 style="color:var(--blue)">Fixed-size framing</h5><ul>
+    <li>Every frame is the same length</li>
+    <li>No delimiter needed — size itself defines the boundary</li>
+    <li>Example: ATM cells</li>
+  </ul></div>
+  <div class="right"><h5 style="color:var(--accent)">Variable-size framing</h5><ul>
+    <li>Frames differ in length → need a <span class="kw" data-g="flag">flag</span> (delimiter) to mark boundaries</li>
+    <li>Problem: what if the flag pattern appears inside the data?</li>
+    <li>Solution: <span class="kw" data-g="byte stuffing">byte stuffing</span> (char-oriented) or bit stuffing</li>
+  </ul></div>
+</div>
+<div class="exam"><b>From the 2017 paper (Q8 & Q6):</b> "In <u>fixed-size</u> framing we do NOT need a delimiter." And "In <u>byte stuffing</u>, a special byte is added to the data section when a character has the same pattern as the <u>flag</u>." Memorize: stuffing protects the <b>flag</b>.</div>
+
+<div class="lab" id="lab-stuff">
+  <h4>⚙ Byte stuffing demo</h4>
+  <div class="desc">The flag is <code>F</code> and the escape byte is <code>E</code>. Type data containing F or E and watch the sender "stuff" an escape before each, then the receiver remove it.</div>
+  <div class="controls">
+    <span class="readout">Raw data:</span>
+    <input type="text" id="stuff-in" value="abFcEd" maxlength="14" style="width:160px">
+    <button class="btn sm" id="stuff-go">▶ Stuff & frame</button>
+  </div>
+  <div id="stuff-out" style="font-size:13px;margin-top:8px"></div>
+</div>
+
+<h2>Error detection — interactive parity & checksum</h2>
+<p>The receiver must catch corruption. The link layer adds redundant bits computed from the data. Try flipping a bit and watch detection succeed or (for weak schemes) fail.</p>
+
+<div class="trick"><b>Memory trick — two sublayers</b><br>
+<span class="hook">DLC = any Date · MAC = Many Compete</span><br>
+<b>DLC</b> works on <b>any</b> link (point-to-point or shared). <b>MAC</b> only matters when <b>many</b> stations <b>compete</b> for one shared medium.</div>
+
+<div class="lab" id="lab-parity">
+  <h4>⚙ Parity & checksum playground</h4>
+  <div class="desc">Edit the 8-bit data word. We compute even <b>parity</b> and a simple <b>checksum</b>. Then flip bits in the "received" copy to simulate errors.</div>
+  <div class="controls">
+    <span class="readout">Data word:</span>
+    <span id="parity-bits"></span>
+  </div>
+  <div class="controls">
+    <span class="readout">Even parity bit: <b id="parity-bit">0</b></span>
+    <span class="readout" style="margin-left:18px">8-bit checksum: <b id="checksum-val">00</b></span>
+  </div>
+  <div class="controls">
+    <span class="readout">Received (click to corrupt):</span>
+    <span id="rx-bits"></span>
+  </div>
+  <div class="readout" id="parity-verdict" style="margin-top:6px"></div>
+</div>
+
+<div class="note cyan"><b>Reality check:</b> single-bit parity catches any <b>odd</b> number of flipped bits but misses even counts. That's why real Ethernet uses <span class="kw">CRC</span> (cyclic redundancy check) — far stronger polynomial-division-based detection in the frame's trailer.</div>
+
+<h2>Multiple Access Protocols — the big tree</h2>
+<p>When stations share one medium (a wire or the air), they need a referee. Three families:</p>
+
+<div class="note blue"><b>Why do collisions still happen in CSMA? (2017 Q11)</b> Because of <span class="kw" data-g="propagation delay">propagation delay</span>. Station A may start sending, but station B — far away — hasn't heard it yet, so B also starts → collision. Sensing helps but can't eliminate this window.</div>
+
+<div class="tabs" id="mac-tabs">
+  <div class="tab active" data-pane="rand">Random Access</div>
+  <div class="tab" data-pane="ctrl">Controlled Access</div>
+  <div class="tab" data-pane="chan">Channelization</div>
+</div>
+
+<div class="tabpane show" id="pane-rand">
+  <div class="card">
+  <p>No station is the boss; each decides on its own whether to send, based on the medium's state. Contention → collisions possible.</p>
+  <table>
+  <tr><th>Method</th><th>Idea</th></tr>
+  <tr><td><b>Pure ALOHA</b></td><td>Send whenever; collide; back off & retry. ~18% efficiency.</td></tr>
+  <tr><td><b>Slotted ALOHA</b></td><td>Only send at slot starts → halves collision window (~37%).</td></tr>
+  <tr><td><b>CSMA</b></td><td><span class="kw">Carrier sense</span>: listen <i>before</i> sending. Persistence methods decide what to do if busy.</td></tr>
+  <tr><td><b>CSMA/CD</b></td><td>+ <b>Collision Detection</b> — abort the moment you hear a collision (wired Ethernet).</td></tr>
+  <tr><td><b>CSMA/CA</b></td><td>+ <b>Collision Avoidance</b> — used in wireless (can't detect collisions on radio); uses IFS, RTS/CTS, NAV.</td></tr>
+  </table>
+  </div>
+</div>
+<div class="tabpane" id="pane-ctrl">
+  <div class="card">
+  <p>Stations consult each other; you can't send unless authorized.</p>
+  <table>
+  <tr><th>Method</th><th>Idea</th></tr>
+  <tr><td><b>Reservation</b></td><td>Reserve a slot before sending data.</td></tr>
+  <tr><td><b>Polling</b></td><td>A <b>primary</b> controls the link. <b>Select</b> = primary has data to send out; <b>Poll</b> = primary asks secondaries if they have data.</td></tr>
+  <tr><td><b>Token Passing</b></td><td>A special <span class="kw">token</span> circulates a logical ring; only the token-holder may transmit.</td></tr>
+  </table>
+  </div>
+</div>
+<div class="tabpane" id="pane-chan">
+  <div class="card">
+  <p>Bandwidth is split among stations — by frequency, time, or code. (Mostly used in wireless, covered more in Ch.12.)</p>
+  <table>
+  <tr><th>Method</th><th>Splits by</th></tr>
+  <tr><td><b>FDMA</b></td><td><b>Frequency</b> — each station gets its own band.</td></tr>
+  <tr><td><b>TDMA</b></td><td><b>Time</b> — each station gets time slots.</td></tr>
+  <tr><td><b>CDMA</b></td><td><b>Code</b> — all share one band, separated by orthogonal codes.</td></tr>
+  </table>
+  </div>
+</div>
+
+<div class="lab" id="lab-csma">
+  <h4>⚙ CSMA/CD vs CSMA/CA</h4>
+  <div class="desc">Two stations want to transmit. Pick a protocol and run the scenario to see how each handles a near-simultaneous attempt.</div>
+  <div class="controls">
+    <button class="tab active" id="csma-cd" style="border-radius:7px">CSMA/CD (wired)</button>
+    <button class="tab" id="csma-ca" style="border-radius:7px">CSMA/CA (wireless)</button>
+    <button class="btn sm" id="csma-run">▶ Run scenario</button>
+  </div>
+  <div id="csma-log" style="font-size:13px;margin-top:6px"></div>
+</div>
+
+<div class="trick"><b>Memory trick — CD vs CA (the #1 confusion)</b><br>
+<span class="hook">Wired CD · Wireless CA</span><br>
+Think of a music <b>CD</b> — a physical disc you hold = <b>wired</b>, Collision <b>D</b>etection. Going cable-less = <b>CA</b>, Collision <b>A</b>voidance. <i>"The Air can't Detect, so it Avoids."</i><br>
+Also: <span class="hook">"Sense before you sentence"</span> = CSMA listens to the carrier before transmitting. And <span class="hook">"Slotted doubles it"</span> — Slotted ALOHA (~37%) ≈ 2× Pure ALOHA (~18%).</div>
+
+<div class="exam"><b>Exam trap:</b> Wireless uses <b>CA, not CD</b>. A radio can't reliably hear its own collisions (hidden terminal), so it <i>avoids</i> collisions with <span class="term" data-g="NAV">NAV</span>/RTS-CTS instead of detecting them. Note: some slides loosely say DCF "uses CSMA/CD" — the correct access method for 802.11 DCF is <b>CSMA/CA</b>.</div>
+
+<div id="quiz-ch9"></div>
+`;
+
+
+// ---------- CHAPTER 10: ETHERNET ----------
+C.ch10 = `
+<div class="crumb">DATA-LINK LAYER · WEEK 10</div>
+<h1 class="title"><span class="num">10</span> Ethernet LANs</h1>
+<p class="lead">Ethernet is the most widely used LAN protocol. Its data-link layer = <span class="kw">LLC</span> sublayer (logical link control) + <span class="kw">MAC</span> sublayer (runs <span class="kw">CSMA/CD</span> & framing). The genius of its evolution: every generation kept the <b>same frame format</b> and address length.</p>
+
+<h2>The Ethernet frame (memorize the field sizes)</h2>
+<div class="lab" id="lab-frame">
+  <h4>⚙ Anatomy of an Ethernet frame</h4>
+  <div class="desc">Hover/click each field to learn its size and job.</div>
+  <div id="frame-svg"></div>
+  <div id="frame-info" class="readout" style="margin-top:8px;min-height:40px"></div>
+</div>
+<table>
+<tr><th>Field</th><th>Size</th><th>Job</th></tr>
+<tr><td>Preamble</td><td>7 bytes</td><td>56 bits alternating 1/0 — sync the receiver clock</td></tr>
+<tr><td>SFD</td><td>1 byte</td><td>Start Frame Delimiter (10101011) — "frame starts now"</td></tr>
+<tr><td>Destination addr</td><td>6 bytes</td><td>MAC address of receiver</td></tr>
+<tr><td>Source addr</td><td>6 bytes</td><td>MAC address of sender</td></tr>
+<tr><td>Type</td><td>2 bytes</td><td>Upper-layer protocol</td></tr>
+<tr><td>Data + padding</td><td>46–1500 bytes</td><td>Payload (min 46 keeps min frame size)</td></tr>
+<tr><td>CRC</td><td>4 bytes</td><td>Error detection</td></tr>
+</table>
+<div class="note cyan">Min frame = <b>512 bits / 64 bytes</b>; Max frame = <b>12,144 bits / 1518 bytes</b> (payload 46–1500). The minimum exists so CSMA/CD can detect collisions before a sender finishes transmitting.</div>
+
+<div class="trick"><b>Memory tricks — Ethernet frame</b><br>
+• Field sizes in order: <span class="hook">7-1-6-6-2-…-4</span> (Preamble 7, SFD 1, Dst 6, Src 6, Type 2, Data, CRC 4). The <b>two 6s</b> are the <b>two 6-byte MAC addresses</b> — Destination first, then Source.<br>
+• <span class="hook">MAC = 48 = 6 × 8</span> — a MAC address is 48 bits = 6 bytes.<br>
+• <span class="hook">"64 in, 1518 out"</span> — min frame 64 B, max frame 1518 B.</div>
+
+<h2>Ethernet evolution</h2>
+<table>
+<tr><th>Generation</th><th>Rate</th><th>Standard</th><th>What stayed the same</th></tr>
+<tr><td>Standard Ethernet</td><td>10 Mbps</td><td>—</td><td>The baseline</td></tr>
+<tr><td>Fast Ethernet</td><td>100 Mbps</td><td>—</td><td>MAC sublayer, frame format, min/max size unchanged</td></tr>
+<tr><td>Gigabit Ethernet</td><td>1 Gbps</td><td>802.3z</td><td>Address length, frame format, min/max length kept</td></tr>
+<tr><td>10-Gigabit Ethernet</td><td>10 Gbps</td><td>—</td><td>Same frame, fiber-focused</td></tr>
+</table>
+<div class="exam"><b>Exam point:</b> the recurring theme is <b>backward compatibility</b> — each speed bump kept the frame format and address length identical, so only the physical layer & implementation changed.</div>
+
+<h2>Connecting devices (heavily tested in 2017)</h2>
+<p>Know exactly which OSI layer each device works at and what it does:</p>
+<table>
+<tr><th>Device</th><th>Layer</th><th>What it does</th></tr>
+<tr><td><span class="kw" data-g="repeater">Repeater</span></td><td>1 (Physical)</td><td>Only <b>regenerates signal strength</b> to extend distance. Does NOT amplify noise, read addresses, or connect different segments logically.</td></tr>
+<tr><td><span class="kw" data-g="hub">Hub</span></td><td>1 (Physical)</td><td>A <b>multiport repeater</b> — repeats bits to all ports. One big collision domain.</td></tr>
+<tr><td><span class="kw" data-g="bridge">Bridge</span></td><td>2 (Data-link)</td><td>Filters & forwards frames by <b>MAC address</b>, splitting collision domains.</td></tr>
+<tr><td>Layer-2 switch<br><span style="font-size:11px;color:var(--muted)">= multiport bridge</span></td><td>2 (Data-link)</td><td>Many-port bridge. A <span class="kw" data-g="transparent switch">transparent switch</span> auto-learns MAC→port (no config needed).</td></tr>
+<tr><td>Layer-3 switch</td><td>3 (Network)</td><td>Switch that also routes using IP — used to create VLANs & limit broadcast domains.</td></tr>
+</table>
+<div class="exam"><b>2017 Q22/Q23/Q21:</b> "Repeaters regenerate signal strength, they do NOT <u>extend time</u>." · "A layer-2 switch is also called a <u>multiport switch/bridge</u>." · To <u>increase bandwidth and limit broadcast domains</u> → use <u>VLAN switches</u>.</div>
+
+<div class="trick"><b>Memory trick — device layers</b><br>
+<span class="hook">"Repeaters &amp; Hubs are brainless (L1), Bridges/Switches read MACs (L2), Routers read IP (L3)"</span><br>
+Climbing the ladder: <b>1</b> = just electricity (repeater/hub), <b>2</b> = MAC addresses (bridge/switch), <b>3</b> = IP addresses (router/L3 switch). The higher the layer, the "smarter" the device.</div>
+
+<h2>Standard Ethernet implementations & cable lengths</h2>
+<table>
+<tr><th>Implementation</th><th>Medium</th><th>Max segment length</th></tr>
+<tr><td>10Base5 (thick coax)</td><td>Thick coaxial</td><td><b>500 m</b></td></tr>
+<tr><td>10Base2 (thin coax)</td><td>Thin coaxial</td><td><b>185 m</b> (≈200)</td></tr>
+<tr><td>10Base-T</td><td>Twisted pair (UTP)</td><td><b>100 m</b></td></tr>
+<tr><td>10Base-F</td><td>Fiber</td><td><b>2000 m</b></td></tr>
+</table>
+
+<div class="trick"><b>Memory trick — 10Base lengths</b><br>
+<span class="hook">"Multiply the number by 100"</span> → 10Base<b>5</b> = <b>500</b> m, 10Base<b>2</b> ≈ <b>200</b> m (officially 185). And <span class="hook">T = Twisted = 100 m</span>, <span class="hook">F = Fiber = Far = 2000 m</span>.</div>
+
+<div class="lab" id="lab-netlen">
+  <h4>⚙ Network length calculator (2012 Q3b style)</h4>
+  <div class="desc">Stations connect to a hub by separate cables. The <b>network length</b> = the longest path between two stations = the two longest station-to-hub cables added together.</div>
+  <div class="controls">
+    <span class="readout">Station distances to hub (m):</span>
+    <input type="text" id="nl-in" value="300, 400, 500, 600" style="width:200px">
+    <button class="btn sm" id="nl-go">▶ Compute</button>
+  </div>
+  <div id="nl-out" class="readout" style="margin-top:8px"></div>
+</div>
+
+<h2>Switches, VLANs & trunking</h2>
+<div class="card">
+<p>A switch forwards frames by learning which MAC lives on which port. A <span class="term" data-g="VLAN">VLAN</span> is a broadcast domain defined <b>by software, not physical wiring</b>. Membership can be by port number, MAC address, IP address, or IP multicast address.</p>
+<h3>VLAN trunking</h3>
+<p>To connect VLANs across switches scalably, configure a <span class="kw">trunk port</span> belonging to <b>all</b> VLANs. The IEEE <span class="kw">802.1Q</span> tag is added to frames crossing the trunk so the far switch knows which VLAN each frame belongs to.</p>
+</div>
+
+<div class="lab" id="lab-switch">
+  <h4>⚙ Switch MAC-learning</h4>
+  <div class="desc">Send a frame between hosts and watch the switch's forwarding table fill up (and stop flooding once it learns).</div>
+  <div class="controls">
+    <select id="sw-src"><option>H1</option><option>H2</option><option>H3</option><option>H4</option></select>
+    <span>→</span>
+    <select id="sw-dst"><option>H2</option><option>H1</option><option>H3</option><option>H4</option></select>
+    <button class="btn sm" id="sw-send">▶ Send frame</button>
+    <button class="btn sm ghost" id="sw-reset">↺ Clear table</button>
+  </div>
+  <div id="sw-out" style="font-size:13px;margin-top:8px"></div>
+  <div id="sw-table"></div>
+</div>
+
+<h2>Point-to-point access networks</h2>
+<div class="grid3">
+  <div class="card"><h3 style="margin-top:0">Dial-up</h3><p style="font-size:12.5px">Modem over the telephone voice band — legacy, slow.</p></div>
+  <div class="card"><h3 style="margin-top:0">DSL</h3><p style="font-size:12.5px">Reuses the existing <b>local loop</b> (phone copper) for higher rates.</p></div>
+  <div class="card"><h3 style="margin-top:0">Cable</h3><p style="font-size:12.5px"><b>HFC</b> (hybrid fiber-coaxial). Uses <b>CM</b> (cable modem) & <b>CMTS</b> at the head-end.</p></div>
+</div>
+
+<div id="quiz-ch10"></div>
+`;
+
+// ---------- CHAPTER 11: SDN ----------
+C.ch11 = `
+<div class="crumb">PROGRAMMABLE NETWORKS · WEEK 11</div>
+<h1 class="title"><span class="num">11</span> Software-Defined Networking</h1>
+<p class="lead">Traditional networks bake the "brain" (routing logic) into every box, making them rigid. <span class="term" data-g="SDN">SDN</span>'s big idea: <b>separate the control plane from the data plane</b> and run the control logic centrally on a <span class="kw">controller</span> — making the network programmable, flexible and centrally managed. The term grew out of <span class="kw">OpenFlow</span> at Stanford.</p>
+
+<h2>Control plane vs Data plane</h2>
+<div class="cmp">
+  <div class="left"><h5 style="color:var(--blue)">Control plane — "the brain"</h5><ul>
+    <li>Decides <b>how</b> packets should be forwarded</li>
+    <li>In SDN: pulled out of switches, runs on a central <b>controller</b></li>
+    <li>Programmable via apps (routing, access control, load balancing)</li>
+  </ul></div>
+  <div class="right"><h5 style="color:var(--accent)">Data plane — "the muscle"</h5><ul>
+    <li>Does the actual <b>movement of packets</b></li>
+    <li>Lives in the SDN-controlled switches</li>
+    <li>Just follows <b>flow tables</b> it's given</li>
+  </ul></div>
+</div>
+
+<h2>SDN architecture — interactive layers</h2>
+<div class="lab" id="lab-sdn">
+  <h4>⚙ The three-layer SDN stack</h4>
+  <div class="desc">Click a layer to see what it does and which API connects it to the next.</div>
+  <div id="sdn-svg"></div>
+  <div id="sdn-info" class="readout" style="margin-top:8px;min-height:46px"></div>
+</div>
+
+<div class="card">
+<table>
+<tr><th>Component</th><th>Role</th></tr>
+<tr><td><b>Network-control apps</b></td><td>Routing, access control, load balancing — the "what should the network do" logic.</td></tr>
+<tr><td><b style="color:var(--accent2)">Northbound API</b></td><td>Between apps and controller (e.g. HTTP <b>REST</b>). "App talks down to controller."</td></tr>
+<tr><td><b>SDN Controller</b></td><td>The network OS — keeps network-wide state (link-state, host info, flow tables, statistics).</td></tr>
+<tr><td><b style="color:var(--accent)">Southbound API</b></td><td>Between controller and switches (e.g. <b>OpenFlow</b> over TCP/6653, also SNMP). "Controller talks down to switches."</td></tr>
+<tr><td><b>SDN-controlled switches</b></td><td>Data plane — match-plus-action flow tables.</td></tr>
+</table>
+</div>
+<div class="note cyan"><b>Memory hook:</b> <b>North</b>bound faces <b>up</b> to the apps; <b>South</b>bound faces <b>down</b> to the switches. OpenFlow = southbound, runs on <b>TCP port 6653</b>.</div>
+
+<div class="trick"><b>Memory tricks — SDN</b><br>
+• <span class="hook">"North to the Nerds, South to the Switches"</span> — Northbound API faces <b>up</b> to the apps (the programmers/nerds); Southbound faces <b>down</b> to the switches (OpenFlow, TCP 6653).<br>
+• <span class="hook">"Control = brain, Data = muscle"</span> — the control plane <b>decides</b>, the data plane just <b>moves packets</b>.<br>
+• Picture a map compass: <b>up = North</b>. Apps sit on top, so they're reached via the <b>North</b>bound API.</div>
+
+<h2>Flow tables: Match-plus-Action</h2>
+<div class="card">
+<p>Each switch holds a <span class="kw">flow table</span>. For every packet it finds the matching rule and applies the action: <b>forward</b>, <b>drop</b>, or <b>modify-field</b>. This is <span class="kw">generalized forwarding</span> — far more flexible than destination-only routing.</p>
+</div>
+
+<div class="lab" id="lab-flow">
+  <h4>⚙ Build a flow-table rule</h4>
+  <div class="desc">Classic exam question: packets arriving at switch s2. Set match conditions + action and add the rule to s2's flow table.</div>
+  <div class="controls">
+    <label>In-port <select id="f-port"><option>1</option><option>2</option><option>*</option></select></label>
+    <label>Src host <select id="f-src"><option>h1/h2</option><option>h5/h6</option><option>any</option></select></label>
+    <label>Dst host <select id="f-dst"><option>h1/h2</option><option>h3/h4</option><option>h5/h6</option></select></label>
+    <label>Action <select id="f-act"><option>Forward port 1</option><option>Forward port 2</option><option>Deliver to host</option><option>Drop</option></select></label>
+    <button class="btn sm" id="f-add">+ Add rule</button>
+  </div>
+  <div id="flow-table"></div>
+</div>
+
+<h2>Reacting to a topology change (the 6-step loop)</h2>
+<div class="card">
+<div class="flow-step"><div class="n">1</div><div>Switch detects <b>link s1–s2 down</b> → sends a <span class="kw">Port-status</span> message (OpenFlow) up.</div></div>
+<div class="flow-step"><div class="n">2</div><div>Controller updates its <b>link-state info</b> via the link-state manager.</div></div>
+<div class="flow-step"><div class="n">3</div><div>It <b>notifies</b> registered apps that the link-state changed.</div></div>
+<div class="flow-step"><div class="n alt">4</div><div>The routing app (<b>Dijkstra link-state routing</b>) <b>recomputes paths</b>.</div></div>
+<div class="flow-step"><div class="n alt">5</div><div>App updates the <b>flow tables</b> in the controller.</div></div>
+<div class="flow-step" style="border:none"><div class="n alt">6</div><div>Controller <b>distributes</b> new tables to affected switches.</div></div>
+</div>
+
+<div class="note blue"><b>Implementations:</b> Proprietary — ONIX, Juniper, Google. Open-source — <span class="kw">OpenDaylight</span>, <span class="kw">ONOS</span>.</div>
+
+<div id="quiz-ch11"></div>
+`;
+
+// ---------- CHAPTER 12: WIRELESS & MOBILE IP ----------
+C.ch12 = `
+<div class="crumb">WIRELESS · WEEK 12</div>
+<h1 class="title"><span class="num">12</span> Wireless Networks & Mobile IP</h1>
+<p class="lead">Wireless changes the rules: the medium is air (broadcast, error-prone), hosts move, and you can't detect collisions. We cover <span class="kw">802.11</span> WLANs, Bluetooth, WiMAX, and how <span class="kw">Mobile IP</span> lets a roaming host keep its IP address.</p>
+
+<h2>Wired vs Wireless — architectural comparison</h2>
+<div class="cmp">
+  <div class="left"><h5 style="color:var(--blue)">Wired LAN</h5><ul>
+    <li>Medium: copper/fiber, contained</li>
+    <li>Hosts physically attached</li>
+    <li>Collisions <b>detectable</b> (CSMA/CD)</li>
+  </ul></div>
+  <div class="right"><h5 style="color:var(--accent)">Wireless LAN</h5><ul>
+    <li>Medium: air, shared with anyone in range</li>
+    <li>Hosts mobile; signal fades & errors</li>
+    <li>Collisions hard to detect → <b>CSMA/CA</b></li>
+  </ul></div>
+</div>
+
+<h2>IEEE 802.11 architecture</h2>
+<div class="grid2">
+  <div class="card"><h3 style="margin-top:0"><span class="term" data-g="BSS">BSS</span> — Basic Service Set</h3><p style="font-size:13px">The building block: stations + (usually) one <b>access point (AP)</b>. Without an AP it's an ad-hoc/independent BSS.</p></div>
+  <div class="card"><h3 style="margin-top:0"><span class="term" data-g="ESS">ESS</span> — Extended Service Set</h3><p style="font-size:13px">Two or more BSSs joined by APs + a distribution system → covers a larger area. Enables roaming between BSSs.</p></div>
+</div>
+<div class="note cyan">Station mobility types: <b>no-transition</b> (stationary), <b>BSS-transition</b> (moves within one ESS), <b>ESS-transition</b> (moves between ESSs).</div>
+
+<div class="trick"><b>Memory trick — BSS vs ESS</b><br>
+<span class="hook">"BSS is a Box, ESS is an Estate"</span><br>
+<b>B</b>SS = one <b>B</b>asic cell (a single AP + its stations). <b>E</b>SS = <b>E</b>xtended — many BSSs joined into one big estate, so you can roam between them.</div>
+
+<h3>MAC sublayer: DCF & PCF</h3>
+<table>
+<tr><th>Function</th><th>Access method</th><th>Notes</th></tr>
+<tr><td><b>DCF</b> (Distributed Coordination Function)</td><td><span class="kw">CSMA/CA</span></td><td>The basic, distributed method</td></tr>
+<tr><td><b>PCF</b> (Point Coordination Function)</td><td><span class="kw">Polling</span></td><td>Optional, infrastructure-only, for time-sensitive traffic</td></tr>
+</table>
+
+<div class="lab" id="lab-ca">
+  <h4>⚙ CSMA/CA with RTS / CTS / NAV</h4>
+  <div class="desc">Step through the handshake that lets wireless avoid collisions and tame the hidden-terminal problem.</div>
+  <div id="ca-stage"></div>
+  <div class="controls"><button class="btn sm" id="ca-next">▶ Next</button><button class="btn sm ghost" id="ca-reset">↺ Reset</button></div>
+</div>
+<div class="note blue"><b>Hidden vs Exposed terminal:</b> <i>Hidden</i> — two senders can't hear each other but both reach the receiver → collision (RTS/CTS fixes this). <i>Exposed</i> — a station needlessly defers because it hears a transmission that wouldn't actually collide.</div>
+
+<h2>Other wireless tech</h2>
+<div class="grid2">
+  <div class="card"><h3 style="margin-top:0">Bluetooth</h3><p style="font-size:13px">Connects gadgets in a small area; a Bluetooth net = <span class="kw">piconet</span>; linked piconets = <span class="kw">scatternet</span>. Layers map to OSI: <b>L2CAP≈LLC</b>, <b>Baseband≈MAC (TDMA)</b>, <b>Radio≈PHY</b>.</p></div>
+  <div class="card"><h3 style="margin-top:0">WiMAX</h3><p style="font-size:13px">IEEE <b>802.16</b> (fixed) / <b>802.16e</b> (mobile). "Last-mile" broadband — a potential alternative to DSL/cable.</p></div>
+</div>
+
+<h2>Mobile IP — keeping your IP while roaming</h2>
+<p>An IP address encodes <i>where</i> you are. So when a host leaves its home network, how do packets still find it? Mobile IP uses two helpers and a temporary address.</p>
+<div class="grid3">
+  <div class="card"><h3 style="margin-top:0">Home Agent</h3><p style="font-size:12.5px">Router on the home network. Intercepts packets for the mobile and tunnels them onward.</p></div>
+  <div class="card"><h3 style="margin-top:0">Foreign Agent</h3><p style="font-size:12.5px">Router on the visited network. Delivers tunneled packets to the mobile.</p></div>
+  <div class="card"><h3 style="margin-top:0">Care-of Address</h3><p style="font-size:12.5px">The mobile's temporary address on the foreign network.</p></div>
+</div>
+
+<div class="lab" id="lab-mip">
+  <h4>⚙ Mobile IP — the three phases</h4>
+  <div class="desc">Walk a packet from a remote host to a mobile that's away from home. Watch agent discovery → registration → data transfer (and triangle routing).</div>
+  <div id="mip-stage"></div>
+  <div class="controls"><button class="btn sm" id="mip-next">▶ Next phase</button><button class="btn sm ghost" id="mip-reset">↺ Reset</button></div>
+</div>
+<div class="exam"><b>Exam concept — triangle routing (inefficiency):</b> a packet from the remote host goes <b>Home Agent → tunnel → mobile</b>, but the mobile's reply can go <b>directly</b> back. The "there's the long way in, short way out" triangle is the classic Mobile IP inefficiency.</div>
+
+<div class="trick"><b>Memory trick — Mobile IP</b><br>
+• Three pieces: <span class="hook">Home · Foreign · Care-of</span>. Story: you travel abroad (<b>Foreign</b> network), get a temporary <b>Care-of</b> address, and your <b>Home</b> agent forwards your mail to you.<br>
+• <span class="hook">"Long way in, short way out"</span> = triangle routing. Mail detours through home (long), your reply goes straight back (short) → a triangle.</div>
+
+<div id="quiz-ch12"></div>
+`;
+
+// ---------- CHAPTER 13: PHYSICAL LAYER ----------
+C.ch13 = `
+<div class="crumb">PHYSICAL LAYER · WEEK 13</div>
+<h1 class="title"><span class="num">13</span> Physical Layer & Transmission Media</h1>
+<p class="lead">The bottom of the stack: turning bits into <b>electromagnetic signals</b> and pushing them down a medium. Here we care about data-rate limits, what degrades signals, how to share a link (multiplexing), and the cables/airwaves themselves.</p>
+
+<h2>Data-rate limits — the two formulas you WILL be tested on</h2>
+<p>How fast can we send bits? It depends on <b>bandwidth</b>, <b>number of signal levels</b>, and <b>channel quality (noise)</b>. Two formulas:</p>
+
+<div class="lab" id="lab-rate">
+  <h4>⚙ Nyquist & Shannon calculator</h4>
+  <div class="desc">Drag the sliders. Nyquist gives the <b>noiseless</b> max rate (you choose levels L); Shannon gives the <b>noisy</b> ceiling from SNR. In practice you use both.</div>
+  <div class="controls">
+    <label>Bandwidth B: <b id="r-bv">3000</b> Hz<br><input type="range" id="r-b" min="500" max="20000" step="500" value="3000" style="width:180px"></label>
+    <label style="margin-left:18px">Signal levels L: <b id="r-lv">4</b><br><input type="range" id="r-l" min="2" max="256" step="1" value="4" style="width:180px"></label>
+    <label style="margin-left:18px">SNR (dB): <b id="r-sv">30</b><br><input type="range" id="r-s" min="0" max="60" step="1" value="30" style="width:180px"></label>
+  </div>
+  <div class="grid2" style="margin-top:10px">
+    <div class="card"><div style="font-size:11px;color:var(--muted)">NYQUIST (noiseless)</div><div class="readout" style="font-size:12px;margin:4px 0">BitRate = 2 × B × log₂L</div><div class="bigval" id="r-nyq">—</div></div>
+    <div class="card"><div style="font-size:11px;color:var(--muted)">SHANNON (noisy ceiling)</div><div class="readout" style="font-size:12px;margin:4px 0">C = B × log₂(1 + SNR)</div><div class="bigval" id="r-sha" style="color:var(--accent)">—</div></div>
+  </div>
+  <div class="note cyan" style="margin-top:8px" id="r-advice"></div>
+</div>
+<div class="exam"><b>Worked example (from your slides):</b> send 265 kbps over a noiseless 20 kHz channel. Nyquist → log₂L = 6.625 → L ≈ 98.7 levels. Not a power of 2, so round: <b>128 levels → 280 kbps</b> or <b>64 levels → 240 kbps</b>. Use the calculator above with B=20000 to reproduce it.</div>
+
+<div class="trick"><b>Memory trick — which formula?</b><br>
+<span class="hook">"Shannon hears Noise (SNR) · Nyquist counts Levels (L)"</span><br>
+<b>S</b>hannon = <b>S</b>NR = the <b>noisy</b> ceiling. <b>Nyquist</b> = uses the number of signal <b>levels L</b> = the <b>noiseless</b> ideal. In real life the usable rate is the <b>lower</b> of the two.</div>
+
+<h2>Transmission impairment — what wrecks a signal</h2>
+<div class="grid3">
+  <div class="card"><h3 style="margin-top:0">Attenuation</h3><p style="font-size:12.5px">Signal <b>loses energy</b> over distance. Fixed with amplifiers/repeaters. Measured in dB.</p></div>
+  <div class="card"><h3 style="margin-top:0">Distortion</h3><p style="font-size:12.5px">Signal <b>changes shape</b> — different frequency components travel at different speeds.</p></div>
+  <div class="card"><h3 style="margin-top:0">Noise</h3><p style="font-size:12.5px">Unwanted energy added. Quantified by <span class="term" data-g="SNR">SNR</span> = signal power ÷ noise power; SNR(dB)=10·log₁₀(SNR).</p></div>
+</div>
+
+<h2>Multiplexing — many signals, one link</h2>
+<div class="trick"><b>Memory tricks — physical layer</b><br>
+• 3 impairments spell <span class="hook">A-N-D</span>: <b>A</b>ttenuation (energy loss), <b>N</b>oise (added junk), <b>D</b>istortion (shape change).<br>
+• Multiplexing: <span class="hook">"Frequency–Time–Wavelength"</span> → <b>F</b>DM = <b>F</b>requency (analog), <b>T</b>DM = <b>T</b>ime (digital), <b>W</b>DM = <b>W</b>avelength (light/fiber). Letter matches the thing it splits.<br>
+• <span class="hook">"Guided has a guide-wire; Unguided is up in the air"</span> — guided = wired (copper/fiber), unguided = wireless.</div>
+<div class="card">
+<p><span class="kw" data-g="multiplexing">Multiplexing</span> = sending multiple signals across one data link simultaneously. As traffic grows, instead of laying new links we install a high-bandwidth link and share it.</p>
+<table>
+<tr><th>Type</th><th>Shares by</th><th>Used for</th></tr>
+<tr><td><span class="kw" data-g="FDM">FDM</span></td><td>Frequency bands</td><td><b>Analog</b> signals (radio, cable TV) — the one that combines analog</td></tr>
+<tr><td><span class="kw" data-g="WDM">WDM</span></td><td>Wavelengths (light)</td><td>Fiber optics (FDM for light)</td></tr>
+<tr><td><span class="kw" data-g="TDM">TDM</span></td><td>Time slots</td><td><b>Digital</b> signals</td></tr>
+</table>
+</div>
+
+<h3>Synchronous vs Statistical TDM</h3>
+<div class="cmp">
+  <div class="left"><h5 style="color:var(--blue)">Synchronous TDM</h5><ul>
+    <li>Each source gets a <b>fixed, pre-assigned</b> slot every frame</li>
+    <li>Empty slots are still sent (wasted) if a source has no data</li>
+    <li>Simple, but can be inefficient</li>
+  </ul></div>
+  <div class="right"><h5 style="color:var(--accent)">Statistical TDM</h5><ul>
+    <li>Slots assigned <b>on demand</b>, only to sources with data</li>
+    <li>Needs addressing in each slot (more overhead per slot)</li>
+    <li>Higher efficiency under bursty traffic</li>
+  </ul></div>
+</div>
+
+<div class="lab" id="lab-tdm">
+  <h4>⚙ Synchronous TDM calculator (2017 C3 — worth 7 points!)</h4>
+  <div class="desc">Combine N digital sources with synchronous TDM. Each output slot carries 1 bit per source, plus optional sync/framing bits. Reproduces the exam's worked answer.</div>
+  <div class="controls">
+    <label>Sources N: <input type="number" id="t-n" value="20" min="1" max="200" style="width:70px"></label>
+    <label>Rate each (kbps): <input type="number" id="t-r" value="100" min="1" style="width:80px"></label>
+    <label>Bits/source/slot: <input type="number" id="t-bps" value="1" min="1" style="width:60px"></label>
+    <label>Extra (framing) bits/frame: <input type="number" id="t-x" value="1" min="0" style="width:60px"></label>
+  </div>
+  <div id="tdm-out"></div>
+</div>
+
+<h2>Transmission media (layer "zero")</h2>
+<div class="tabs" id="media-tabs">
+  <div class="tab active" data-pane="guided">Guided (wired)</div>
+  <div class="tab" data-pane="unguided">Unguided (wireless)</div>
+</div>
+<div class="tabpane show" id="pane-guided">
+  <div class="card">
+  <p>A physical conduit directs the signal. Copper carries <b>electric current</b>; fiber carries <b>light</b>.</p>
+  <table>
+  <tr><th>Medium</th><th>Carries</th><th>Notes</th></tr>
+  <tr><td><b>Twisted-pair</b></td><td>Electric current</td><td>Cheap, common (UTP/STP); telephone & LAN</td></tr>
+  <tr><td><b>Coaxial</b></td><td>Electric current</td><td>Higher bandwidth than twisted pair; cable TV</td></tr>
+  <tr><td><b>Fiber-optic</b></td><td>Light</td><td>Core + cladding (<span class="kw" data-g="critical angle">total internal reflection</span>). When the ray hits below the <span class="kw" data-g="critical angle">critical angle</span> it refracts and escapes; at/above it reflects and stays in the core. Modes: multimode step-index, multimode graded-index, <span class="kw" data-g="single-mode">single-mode</span> (best, long-haul).</td></tr>
+  </table>
+  </div>
+</div>
+<div class="tabpane" id="pane-unguided">
+  <div class="card">
+  <p>No conductor — EM waves through free space (wireless). Available to anyone in range.</p>
+  <table>
+  <tr><th>Band</th><th>Property</th><th>Use</th></tr>
+  <tr><td><b>Radio waves</b></td><td>Omnidirectional</td><td>AM/FM, broadcast</td></tr>
+  <tr><td><b>Microwaves</b></td><td>Line-of-sight, unidirectional</td><td>Cellular, satellite, Wi-Fi</td></tr>
+  <tr><td><b>Infrared</b></td><td>Short range, can't pass walls</td><td>Remote controls, close-range data</td></tr>
+  </table>
+  </div>
+</div>
+
+<div id="quiz-ch13"></div>
+`;
+
+// ---------- MOCK EXAM ----------
+C.mock = `
+<div class="crumb">PAST-PAPER STYLE · 2017 FORMAT</div>
+<h1 class="title"><span class="num">✎</span> Mock Exam — 40 MCQs</h1>
+<p class="lead">Modelled on your CPE 341/314 final (Section A: 40 multiple-choice, 1 point each). These mirror the real 2017 questions across all chapters. Answer them, then hit <b>Grade exam</b> for your score and a topic breakdown. Each explanation links the answer back to the concept.</p>
+<div class="card tinted">
+  <div class="controls" style="justify-content:space-between">
+    <div class="readout">Answered: <b id="mock-ans">0</b> / 40 &nbsp;·&nbsp; Score: <b id="mock-score" style="color:var(--accent2)">—</b></div>
+    <div>
+      <button class="btn" id="mock-grade">✓ Grade exam</button>
+      <button class="btn ghost sm" id="mock-reset">↺ Reset</button>
+    </div>
+  </div>
+  <div class="bar" style="margin-top:10px"><i id="mock-bar"></i></div>
+</div>
+<div id="mock-body"></div>
+<div id="mock-result"></div>
+`;
+
+// 40-question bank: [question, [options], answerIndex, topic, explanation]
+const MOCK=[
+ ["Each node uses the shortest-path-tree protocol to construct its ___.",["link","graph","routing table","network"],2,"Routing","Each router builds its own routing/forwarding table from the least-cost tree."],
+ ["The distance-vector protocol implementation is called ___.",["BGP","RIP","OSPF","RARP"],1,"Routing","RIP = distance-vector (hop count). OSPF = link-state. BGP = path-vector."],
+ ["Hop count is the metric used by ___.",["OSPF","RIP","BGP","none"],1,"Routing","RIP uses hop count; OSPF uses a configurable cost."],
+ ["The most popular link-state routing protocol is ___.",["SPF","RIP","BGP","OSPF"],3,"Routing","OSPF is the classic link-state (Dijkstra) protocol."],
+ ["The data-link layer encapsulates each packet in a frame by adding ___.",["header","trailer","both header & trailer","none"],2,"Link","A frame adds both a header and a trailer (e.g. CRC) around the packet."],
+ ["In byte stuffing, a special byte is added when a data character matches the ___.",["flag","error","sender","destination"],0,"Link","Stuffing protects the flag (frame delimiter) pattern appearing in data."],
+ ["Data link control deals with the design and procedures for ___ communication.",["node-to-node","host-to-host","process-to-process","end-to-end"],0,"Link","DLC = node-to-node (between two adjacent nodes)."],
+ ["In ___ framing, we need a delimiter (flag) to define frame boundaries.",["fixed-size","variable-size","standard","none"],1,"Link","Variable-size frames need a flag; fixed-size don't (length defines boundary)."],
+ ["The original ALOHA protocol is called ___.",["simple ALOHA","pure ALOHA","slotted ALOHA","CSMA"],1,"MAC","Pure ALOHA = the original; slotted ALOHA came later."],
+ ["In CSMA, if a station senses the medium before sending, the chance of collision is ___.",["increased","removed","reduced","protected"],2,"MAC","Carrier sensing reduces — but does not remove — collisions."],
+ ["In CSMA, collisions still happen because of ___.",["collision delay","sense delay","transmit delay","propagation delay"],3,"MAC","Propagation delay means a far station may not yet hear an ongoing transmission."],
+ ["A protocol that transmits data without any scheduled time is ___.",["random access","controlled access","channelization","none"],0,"MAC","Random access = no schedule; stations contend whenever they have data."],
+ ["CSMA is based on a medium called ___.",["listen before talk","listen before sending","sense before transmit","sense before collision"],2,"MAC","Carrier Sense = sense (the carrier) before transmit."],
+ ["In token passing, a station can send data when it receives the ___.",["data","token","frame","IFS"],1,"MAC","Possession of the token grants the right to transmit."],
+ ["In token passing, stations are organized in a logical ___.",["ring","bus","star","hybrid"],0,"MAC","A logical ring — the token circulates around it."],
+ ["The time-out period equals the maximum possible propagation delay of a ___.",["square-trip","rectangular-trip","triangle-trip","round-trip"],3,"MAC","Round-trip — out and back — bounds the time to detect a problem."],
+ ["What is the size of a MAC address?",["16-bit","32-bit","48-bit","64-bit"],2,"Ethernet","MAC addresses are 48 bits (6 bytes)."],
+ ["Maximum length of 10Base2 is ___.",["200 m","195 m","185 m","2000 m"],2,"Ethernet","10Base2 ≈ 185 m. (10Base5=500 m, 10Base-T=100 m, 10Base-F=2000 m.)"],
+ ["The maximum size of the payload field in an Ethernet frame is ___.",["1000 bytes","1500 bytes","1518 bytes","1600 bytes"],1,"Ethernet","Payload max = 1500 bytes. The whole frame max is 1518 bytes."],
+ ["VLANs create ___.",["limited domains","broadcast domains","multicast domains","group domains"],1,"Ethernet","A VLAN defines a separate broadcast domain by software."],
+ ["To improve performance by increasing bandwidth and limiting broadcast domains, use ___.",["layer-3 switches","N-port bridges","VLAN switches","learning switches"],2,"Ethernet","VLAN switches limit broadcast domains and segment the network."],
+ ["Repeaters regenerate signal strength; they do NOT ___.",["amplify signals","extend time","regenerate data","connect segments"],1,"Ethernet","A repeater regenerates strength but cannot extend the time/collision window."],
+ ["A layer-2 switch is also called a ___.",["multiport hub","multiport switch/bridge","multiport repeater","two-port switch"],1,"Ethernet","A layer-2 switch is a multiport bridge/switch."],
+ ["In ARP, a packet is encapsulated directly into a ___.",["data-link integer","data-link IP","data-link station","data-link frame"],3,"Ethernet","ARP packets are carried directly inside a data-link frame."],
+ ["Which multiple-access technique does IEEE 802.11 (wireless LAN) use?",["CDMA","CSMA/CA","CSMA/CD","Token passing"],1,"Wireless","802.11 DCF uses CSMA/CA (avoidance), since radios can't detect collisions."],
+ ["BSS stands for ___.",["Basic Signal Set","Beacon Service Set","Basic Service Set","Basic Service Standard"],2,"Wireless","BSS = Basic Service Set, the building block of a WLAN."],
+ ["In a Bluetooth piconet, one master device ___.",["cannot be a slave","can be a slave in another piconet","can be a slave in the same piconet","both b and c"],0,"Wireless","A master cannot simultaneously be a slave in its own piconet."],
+ ["WiMAX stands for ___.",["wireless interoperability for microwave access","worldwide interoperability for microwave access","worldwide international standard for microwave access","wireless international standard for microwave access"],1,"Wireless","Worldwide Interoperability for Microwave Access."],
+ ["WDM is an analog multiplexing technique to combine ___ signals.",["magnetic","electromagnetic","digital","optical"],3,"Physical","WDM combines optical (light) signals — it's FDM for fiber."],
+ ["TDM through a hierarchy of digital signals is implemented by ___ companies.",["radio","telephone","TV broadcasting","Internet"],1,"Physical","The digital TDM hierarchy (T-lines) is a telephone-company system."],
+ ["When a ray of light moves closer to the surface, the angle of incidence is ___ the critical angle.",["equal to","not equal to","less than","greater than"],2,"Physical","Below the critical angle the ray refracts toward the surface (and can escape)."],
+ ["A twisted-pair cable with a metal casing that improves noise penetration is called ___.",["shielded twisted pair","unshielded twisted pair","secured twisted pair","fiber optic"],0,"Physical","STP = Shielded Twisted Pair; the shield reduces noise."],
+ ["Which statement about a datagram is correct?",["it reserves a path first","it is independently routed and carries its own destination IP","it is a data-link frame","it guarantees in-order delivery"],1,"Routing","A datagram is connectionless: self-contained, independently routed, no reserved path."],
+ ["Which device works at the physical layer only?",["bridge","layer-2 switch","hub/repeater","router"],2,"Ethernet","Hubs and repeaters operate at layer 1 (physical) only."],
+ ["A transparent switch builds its forwarding table by ___.",["manual config","learning source MAC addresses","flooding forever","reading IP headers"],1,"Ethernet","It learns source MAC→port automatically — hence 'transparent'."],
+ ["Which is the correct Nyquist formula (noiseless)?",["C=B·log2(1+SNR)","BitRate=2·B·log2 L","R=B/L","C=10·log10(SNR)"],1,"Physical","Nyquist (noiseless): BitRate = 2·B·log2 L."],
+ ["Statistical TDM differs from synchronous TDM because slots are ___.",["fixed per source","assigned on demand","always empty","larger"],1,"Physical","Statistical TDM assigns slots only to sources that have data."],
+ ["In SNMP, the component that NAMES objects and defines types/encoding is ___.",["MIB","SMI","Trap","VACM"],1,"Mgmt","SMI = naming (OID), types and encoding (BER). MIB stores the values."],
+ ["An unsolicited SNMP message from agent to manager is a ___.",["GetRequest","SetRequest","Trap","Response"],2,"Mgmt","A Trap reports an event without being asked."],
+ ["In SDN, OpenFlow is the ___ API running on TCP port ___.",["northbound / 80","southbound / 6653","northbound / 443","southbound / 161"],1,"SDN","OpenFlow = southbound (controller↔switches), TCP 6653."],
+];
+
+// ---------- MEMORY TRICKS ----------
+C.tricks = `
+<div class="crumb">RECALL BOOSTERS</div>
+<h1 class="title"><span class="num">🧠</span> Memory Tricks</h1>
+<p class="lead">Every mnemonic from the chapters, gathered in one place. Skim them, then flip the <b>flashcards</b> at the bottom to test whether the trick actually sticks. Purple boxes are the hooks; say them out loud — silly phrases are the ones you remember in the exam.</p>
+
+<h2>Chapter 7 · Routing</h2>
+<div class="trick"><span class="hook">LSD</span> = <b>L</b>ink-<b>S</b>tate uses <b>D</b>ijkstra (so Distance-Vector uses Bellman-Ford). <i>"Bellman asks his Buddies (local), Dijkstra sees the Diagram (global)."</i></div>
+<div class="trick"><span class="hook">RIP rests at 16</span> — hops count to 15; <b>16 = infinity = route is dead</b>.</div>
+<div class="trick"><span class="hook">BGP = Between Gateways' Politics</span> — interdomain (between AS), policy-based. OSPF stays home (intradomain).</div>
+
+<h2>Chapter 8 · Network Management</h2>
+<div class="trick"><span class="hook">"Cats Fight, People Argue, Stop!"</span> → the 5 areas: <b>C</b>onfig, <b>F</b>ault, <b>P</b>erformance, <b>A</b>ccounting, <b>S</b>ecurity.</div>
+<div class="trick"><span class="hook">SMI names it · MIB keeps it · SNMP moves it</span>. A <b>TRAP is sprung</b> — the only message no one asked for (agent→manager).</div>
+
+<h2>Chapter 9 · Link Layer & MAC</h2>
+<div class="trick"><span class="hook">Wired CD · Wireless CA</span> — a music <b>CD</b> is a physical disc (wired, Detect); cable-less = <b>CA</b> (Avoid). "The air can't detect, so it avoids."</div>
+<div class="trick"><span class="hook">DLC = any Date · MAC = Many Compete</span> — DLC works on any link; MAC only when many share one medium. Plus <span class="hook">"Slotted doubles it"</span> (37% vs 18%).</div>
+
+<h2>Chapter 10 · Ethernet</h2>
+<div class="trick"><span class="hook">7-1-6-6-2-…-4</span> — frame field sizes. The two <b>6</b>s = the two 6-byte MAC addresses (Dst, then Src). <span class="hook">MAC = 48 = 6×8</span>.</div>
+<div class="trick"><span class="hook">Multiply by 100</span> — 10Base5 → 500 m, 10Base2 → ~200 m. <span class="hook">T = Twisted = 100 m</span>, <span class="hook">F = Fiber = Far = 2000 m</span>.</div>
+<div class="trick"><span class="hook">Brainless→MAC→IP</span> — Repeater/Hub (L1) → Bridge/Switch (L2) → Router/L3 switch (L3). Higher layer = smarter device.</div>
+
+<h2>Chapter 11 · SDN</h2>
+<div class="trick"><span class="hook">North to the Nerds, South to the Switches</span> — Northbound = up to apps; Southbound = down to switches (OpenFlow, TCP 6653). <span class="hook">Control = brain, Data = muscle</span>.</div>
+
+<h2>Chapter 12 · Wireless & Mobile IP</h2>
+<div class="trick"><span class="hook">BSS is a Box, ESS is an Estate</span> — one cell vs many joined cells.</div>
+<div class="trick"><span class="hook">Home · Foreign · Care-of</span> — travel abroad (Foreign), get a temporary Care-of address, Home agent forwards your mail. <span class="hook">"Long way in, short way out"</span> = triangle routing.</div>
+
+<h2>Chapter 13 · Physical Layer</h2>
+<div class="trick"><span class="hook">Shannon hears Noise (SNR) · Nyquist counts Levels (L)</span> — Shannon = noisy ceiling, Nyquist = noiseless ideal. Usable rate = the lower one.</div>
+<div class="trick"><span class="hook">A-N-D</span> = the 3 impairments: Attenuation, Noise, Distortion. Multiplexing: <span class="hook">F</span>requency / <span class="hook">T</span>ime / <span class="hook">W</span>avelength = FDM (analog) / TDM (digital) / WDM (light).</div>
+
+<h2>Flashcard drill</h2>
+<div class="lab" id="lab-flash">
+  <div class="desc">Read the prompt, say your answer out loud, then flip. Mark whether you got it — your accuracy shows at the end.</div>
+  <div id="flash-card" style="background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:30px 20px;text-align:center;cursor:pointer;min-height:120px;display:flex;flex-direction:column;justify-content:center;align-items:center">
+    <div style="font-size:11px;color:var(--muted);letter-spacing:1px">CLICK TO FLIP</div>
+    <div id="flash-text" style="font-size:17px;margin-top:10px"></div>
+  </div>
+  <div class="controls" style="justify-content:center;margin-top:14px">
+    <button class="btn ghost sm" id="flash-bad">✗ Missed it</button>
+    <button class="btn sm" id="flash-good">✓ Got it</button>
+  </div>
+  <div class="readout" style="text-align:center;margin-top:6px" id="flash-stat">Card 1 — tap the card to reveal</div>
+</div>
+`;
+
+// flashcard data: [prompt, answer]
+const FLASH=[
+ ["Which algorithm does Link-State routing use?","Dijkstra (LSD = Link-State→Dijkstra). Distance-Vector uses Bellman-Ford."],
+ ["What does hop count 16 mean in RIP?","Infinity / unreachable — 'RIP rests at 16'. Max valid hops = 15."],
+ ["BGP: interdomain or intradomain? Cost or policy?","Interdomain (between AS) + policy-based — 'Between Gateways' Politics'."],
+ ["Name the 5 network-management areas.","Config, Fault, Performance, Accounting, Security (C-F-P-A-S)."],
+ ["Which SNMP message is unsolicited?","Trap (agent → manager) — 'a TRAP is sprung'."],
+ ["SMI vs MIB vs SNMP — one verb each?","SMI names it · MIB keeps it · SNMP moves it."],
+ ["Wired uses CSMA/__ ; wireless uses CSMA/__ ?","Wired = CD (Detect), Wireless = CA (Avoid). 'Air can't detect, so it avoids.'"],
+ ["DLC works on which links? MAC matters when?","DLC = any link; MAC = only when many stations share one medium."],
+ ["Ethernet frame field sizes in order?","7-1-6-6-2-(46–1500)-4. The two 6s = Dst & Src MAC addresses."],
+ ["Size of a MAC address?","48 bits = 6 bytes (48 = 6×8)."],
+ ["10Base5 and 10Base-T max lengths?","10Base5 = 500 m (×100 trick); 10Base-T = 100 m (Twisted)."],
+ ["Repeater, switch, router — which layers?","Repeater/Hub L1 · Bridge/Switch L2 · Router/L3 switch L3."],
+ ["Northbound vs Southbound API?","North = up to apps (the nerds); South = down to switches (OpenFlow, TCP 6653)."],
+ ["BSS vs ESS?","BSS = one box/cell; ESS = an estate of many BSSs joined for roaming."],
+ ["The 3 Mobile IP pieces?","Home agent, Foreign agent, Care-of address."],
+ ["What is triangle routing?","Long way in via home agent, short way out direct — the Mobile IP inefficiency."],
+ ["Shannon formula uses ___; Nyquist uses ___.","Shannon = SNR (noisy); Nyquist = L levels (noiseless). Use the lower rate."],
+ ["The 3 transmission impairments?","Attenuation, Noise, Distortion (A-N-D)."],
+ ["FDM / TDM / WDM split by what?","Frequency (analog) / Time (digital) / Wavelength (light)."],
+ ["802.11 DCF access method?","CSMA/CA (not CD)."],
+];
+
+C.cheat = `
+<div class="crumb">RAPID REVIEW</div>
+<h1 class="title"><span class="num">★</span> One-Page Cheat Sheet</h1>
+<p class="lead">Last-minute, high-yield facts across all 7 chapters. If it's on this page, it's likely on the exam.</p>
+
+<h2>Routing (Ch.7)</h2>
+<div class="card"><table>
+<tr><th>Family</th><th>Algorithm</th><th>Knowledge</th><th>Protocol</th><th>Metric</th></tr>
+<tr><td>Distance-Vector</td><td>Bellman-Ford</td><td>Local (neighbors)</td><td>RIP</td><td>Hop count (max 15)</td></tr>
+<tr><td>Link-State</td><td>Dijkstra</td><td>Global (LSDB)</td><td>OSPF (intra-AS)</td><td>Configurable cost</td></tr>
+<tr><td>Path-Vector</td><td>Policy</td><td>Path list</td><td>BGP (inter-AS)</td><td>Policy/best path</td></tr>
+</table></div>
+
+<h2>Network Mgmt (Ch.8)</h2>
+<div class="card">
+<p>5 areas: <b>C</b>onfig · <b>F</b>ault · <b>P</b>erformance · <b>A</b>ccounting · <b>S</b>ecurity. Trio: <b>SNMP</b> (packets/PDUs) · <b>SMI</b> (name+type+encode, BER) · <b>MIB</b> (object store, lexicographic). Manager↔Agent. <b>Trap</b> = unsolicited alert. SNMPv3: USM (auth+privacy) + VACM (access views).</p></div>
+
+<h2>Link Layer (Ch.9)</h2>
+<div class="card">
+<p>Sublayers: <b>DLC</b> (framing, flow & error control, ARQ) + <b>MAC</b> (shared medium). MAC families: <b>Random</b> (ALOHA, CSMA, CSMA/CD wired, CSMA/CA wireless) · <b>Controlled</b> (reservation, polling, token) · <b>Channelization</b> (FDMA/TDMA/CDMA). Parity catches odd errors only → CRC is stronger.</p></div>
+
+<h2>Ethernet (Ch.10)</h2>
+<div class="card">
+<p>LLC + MAC(CSMA/CD). Frame: Preamble(7)+SFD(1)+Dst(6)+Src(6)+Type(2)+Data(46–1500)+CRC(4). Min 64B/512b, Max 1518B/12144b. Evolution 10M→100M→1G(802.3z)→10G keeps frame format. VLAN = software-defined broadcast domain; trunk port + 802.1Q tag.</p></div>
+
+<h2>SDN (Ch.11)</h2>
+<div class="card">
+<p>Separate <b>control plane</b> (brain→central controller) from <b>data plane</b> (switches). <b>Northbound</b> API = apps↔controller (REST). <b>Southbound</b> = controller↔switches (<b>OpenFlow, TCP 6653</b>). Switches use <b>match-plus-action</b> flow tables: forward / drop / modify. Open-source: OpenDaylight, ONOS.</p></div>
+
+<h2>Wireless & Mobile IP (Ch.12)</h2>
+<div class="card">
+<p>802.11: <b>BSS</b> (one AP) → <b>ESS</b> (many BSSs). <b>DCF</b>=CSMA/CA, <b>PCF</b>=polling. RTS/CTS/NAV avoid collisions & hidden terminals. Bluetooth=piconet/scatternet. WiMAX=802.16/.16e. Mobile IP: <b>Home Agent</b> + <b>Foreign Agent</b> + <b>Care-of Address</b>; 3 phases (discovery→registration→data); <b>triangle routing</b> = inefficiency.</p></div>
+
+<h2>Physical Layer (Ch.13)</h2>
+<div class="card">
+<p><b>Nyquist</b> (noiseless): BitRate = 2·B·log₂L. <b>Shannon</b> (noisy): C = B·log₂(1+SNR). Impairments: attenuation (energy loss), distortion (shape change), noise (SNR=signal/noise; dB=10log₁₀). Multiplexing: FDM/WDM/TDM. Media: guided (twisted-pair, coax, fiber: core+cladding, single-mode best) vs unguided (radio, microwave LOS, infrared short-range).</p></div>
+
+<div class="note blue" style="margin-top:20px"><b>Final tip:</b> examiners love (1) DV-vs-LS comparison tables, (2) Ethernet field sizes, (3) North/Southbound direction, (4) the two PHY formulas, and (5) the three Mobile IP agents. Nail those five and you're in great shape. For fast recall, run the <b>🧠 Memory Tricks</b> flashcard deck the morning of the exam. Good luck! 🎯</div>
+
+<h2>Past-paper hot spots (2012 & 2017)</h2>
+<div class="card"><table>
+<tr><th>Fact tested</th><th>Answer</th></tr>
+<tr><td>MAC address size</td><td><b>48 bits</b> (6 bytes)</td></tr>
+<tr><td>Ethernet payload max</td><td><b>1500 bytes</b> (frame max 1518)</td></tr>
+<tr><td>10Base5 / 10Base2 / 10Base-T / 10Base-F</td><td><b>500 / 185 / 100 / 2000 m</b></td></tr>
+<tr><td>Repeater does NOT…</td><td>extend time (only regenerates strength)</td></tr>
+<tr><td>Layer-2 switch = </td><td>multiport bridge/switch (transparent = self-learning)</td></tr>
+<tr><td>Byte stuffing protects the…</td><td><b>flag</b> (in variable-size framing)</td></tr>
+<tr><td>Fixed-size framing needs a flag?</td><td><b>No</b> — only variable-size does</td></tr>
+<tr><td>CSMA collisions persist due to…</td><td><b>propagation delay</b></td></tr>
+<tr><td>802.11 access method</td><td><b>CSMA/CA</b> (DCF)</td></tr>
+<tr><td>WDM combines</td><td><b>optical</b> signals; FDM combines <b>analog</b></td></tr>
+<tr><td>Network length (hub)</td><td>sum of the <b>two longest</b> station cables</td></tr>
+<tr><td>Synchronous TDM frame</td><td>N×bits + extra; efficiency = useful/total</td></tr>
+<tr><td>Routing is which layer's job?</td><td><b>Network</b> — only layer with global addressing + forwarding tables</td></tr>
+</table></div>
+<div class="exam"><b>Numerical drills to rehearse:</b> the <b>TDM problem</b> (Ch.13 calculator — N=20, 100 kbps → 2.1 Mbps, 95.2%), the <b>Nyquist 265 kbps</b> example, the <b>distance-vector convergence</b> on the A-B-C-D graph (Ch.7), and the <b>network-length</b> calc (Ch.10).</div>
+`;
+
+
+// ============ QUIZ DATA ============
+const QUIZ = {
+  ch7:[
+    {q:"Which algorithm does a Distance-Vector protocol like RIP use?",o:["Dijkstra","Bellman-Ford","Spanning tree","Flooding only"],a:1,e:"Distance-Vector = Bellman-Ford. Link-State = Dijkstra. RIP is a classic DV protocol."},
+    {q:"What is RIP's maximum hop count, and what does the next value mean?",o:["31, then drop","255, then loop","15, with 16 = infinity (unreachable)","7, with 8 = broadcast"],a:2,e:"RIP caps paths at 15 hops; 16 represents infinity/unreachable, which limits the count-to-infinity problem."},
+    {q:"Why was Path-Vector routing (BGP) created?",o:["To be faster than Dijkstra","To let the source apply policy, not just least cost","To save memory","To replace Ethernet"],a:1,e:"Least-cost routing can't stop packets crossing unwanted areas. Path-vector lets the source choose paths by policy and carries the full path to prevent loops."},
+    {q:"Which converges faster and has no count-to-infinity problem?",o:["Distance-Vector","Link-State","Both equally","Neither"],a:1,e:"Link-State has global knowledge (LSDB) so it converges faster and avoids count-to-infinity, at the cost of more flooding bandwidth."},
+    {q:"OSPF operates within a single ___ and uses ___.",o:["VLAN / CSMA","AS / Dijkstra","BSS / polling","piconet / TDMA"],a:1,e:"OSPF is intradomain (within one Autonomous System) and uses Dijkstra's link-state algorithm."},
+  ],
+  ch8:[
+    {q:"In SNMP, which component NAMES objects and defines their data types & encoding?",o:["MIB","SMI","SNMP PDU","VACM"],a:1,e:"SMI = naming (OID), types, and encoding (BER). MIB is the actual object store; SNMP is the messaging."},
+    {q:"Which PDU is sent UNSOLICITED from agent to manager when an event happens?",o:["GetRequest","SetRequest","Trap","Response"],a:2,e:"A Trap is an unsolicited alert from agent to manager. Get/Set are manager-initiated."},
+    {q:"The MIB walks its variables using what ordering?",o:["Random","Lexicographic","Reverse-DNS","Round-robin"],a:1,e:"MIB uses lexicographic ordering, which is what lets GetNextRequest walk the OID tree."},
+    {q:"In SNMPv3, what does USM provide?",o:["Flow tables","Per-user authentication + privacy + replay protection","VLAN tagging","Hop-count limiting"],a:1,e:"USM (User-based Security Model) = authentication (HMAC-MD5/SHA), privacy (DES/AES), and replay protection. VACM handles access views."},
+  ],
+  ch9:[
+    {q:"Which two sublayers make up the data-link layer?",o:["LLC and IP","DLC and MAC","TCP and UDP","BSS and ESS"],a:1,e:"DLC (works on any link: framing, flow/error control) + MAC (only for shared/broadcast links)."},
+    {q:"Single-bit even parity fails to detect errors when...",o:["one bit flips","an odd number of bits flip","an even number of bits flip","no bits flip"],a:2,e:"Parity catches any ODD number of flips but misses EVEN counts — which is why CRC is preferred."},
+    {q:"Wireless networks use CSMA/CA instead of CSMA/CD because...",o:["CA is older","radios can't reliably detect their own collisions","CD needs fiber","CA uses less power only"],a:1,e:"A wireless node can't reliably hear collisions (hidden terminal), so it AVOIDS them (CA) using IFS/RTS/CTS/NAV rather than detecting (CD)."},
+    {q:"In controlled-access POLLING, 'Select' means:",o:["secondary requests to send","primary has data to send out","token is passed","reservation made"],a:1,e:"Select = primary device has data to send. Poll = primary asks secondaries if THEY have data."},
+    {q:"Which channelization method separates stations by orthogonal codes?",o:["FDMA","TDMA","CDMA","ALOHA"],a:2,e:"CDMA = code division. FDMA=frequency, TDMA=time."},
+    {q:"In variable-size framing, what protects a data byte that matches the flag pattern?",o:["a checksum","byte stuffing (insert an escape)","a longer preamble","CRC"],a:1,e:"Byte stuffing inserts an escape byte before any data byte equal to the flag, so it isn't mistaken for a boundary. Fixed-size framing needs no flag at all."},
+  ],
+  ch10:[
+    {q:"What is the size of each MAC address field in an Ethernet frame?",o:["2 bytes","4 bytes","6 bytes","8 bytes"],a:2,e:"Destination and Source addresses are 6 bytes each. Type=2, CRC=4, Preamble=7, SFD=1."},
+    {q:"The minimum Ethernet frame length is:",o:["46 bytes","64 bytes","128 bytes","1518 bytes"],a:1,e:"Min = 64 bytes (512 bits); max = 1518 bytes. Payload ranges 46–1500. The minimum supports collision detection in CSMA/CD."},
+    {q:"Across Standard→Fast→Gigabit Ethernet, what stayed unchanged?",o:["The cable type","The data rate","The frame format & address length","The duplex mode"],a:2,e:"Each generation kept the frame format, address length, and min/max size — only the PHY/implementation and speed changed."},
+    {q:"A VLAN is defined by:",o:["physical wiring","software configuration","IP routing tables","the CRC field"],a:1,e:"VLANs are configured by software, not physical wiring. Membership can be by port, MAC, IP, or IP-multicast. Trunks use 802.1Q tags."},
+    {q:"Which device operates at the physical layer (Layer 1) only?",o:["bridge","layer-2 switch","repeater/hub","router"],a:2,e:"Repeaters and hubs only regenerate signal strength at Layer 1 — they don't read addresses."},
+    {q:"The maximum segment length of 10Base2 is closest to:",o:["100 m","185 m","500 m","2000 m"],a:1,e:"10Base2 ≈ 185 m. 10Base5 = 500 m, 10Base-T = 100 m, 10Base-F = 2000 m."},
+  ],
+  ch11:[
+    {q:"SDN's core idea is to separate the ___ plane from the ___ plane.",o:["physical / logical","control / data","north / south","manager / agent"],a:1,e:"Control plane (decision-making, centralized in SDN) is separated from the data plane (packet forwarding in switches)."},
+    {q:"The OpenFlow protocol is which type of API, on which TCP port?",o:["Northbound, 80","Southbound, 6653","Northbound, 443","Southbound, 161"],a:1,e:"OpenFlow is the Southbound API (controller↔switches), running on TCP port 6653."},
+    {q:"A flow table entry follows which paradigm?",o:["store-and-forward","match-plus-action","sense-and-avoid","poll-and-select"],a:1,e:"Match-plus-action: match packet fields, then forward / drop / modify-field."},
+    {q:"The Northbound API connects:",o:["switch to switch","controller to switches","apps to controller","host to AP"],a:2,e:"Northbound (faces UP) = apps↔controller, often HTTP REST. Southbound (faces DOWN) = controller↔switches."},
+  ],
+  ch12:[
+    {q:"An ESS is made up of:",o:["one AP and its stations","two or more BSSs joined by APs","a single piconet","a trunk port"],a:1,e:"BSS = building block (one AP). ESS = two+ BSSs connected via APs/distribution system, enabling roaming."},
+    {q:"802.11 DCF uses which access method?",o:["CSMA/CD","CSMA/CA","Token passing","Pure ALOHA"],a:1,e:"DCF uses CSMA/CA. PCF (optional) uses polling."},
+    {q:"In Mobile IP, the temporary address a mobile gets on a visited network is the:",o:["home address","care-of address","MAC address","loopback"],a:1,e:"Care-of address = the mobile's temporary address on the foreign network, registered with the home agent."},
+    {q:"'Triangle routing' in Mobile IP refers to:",o:["three home agents","inefficiency: long tunneled path in, direct path out","a routing loop","a CRC error"],a:1,e:"Packets to the mobile detour through the home agent (long way in), while replies can go direct (short way out) — forming a triangle."},
+    {q:"A Bluetooth network is called a:",o:["BSS","piconet","scatternet of one","VLAN"],a:1,e:"A single Bluetooth network = piconet; linked piconets = scatternet."},
+  ],
+  ch13:[
+    {q:"The Nyquist formula for a NOISELESS channel is:",o:["C = B·log₂(1+SNR)","BitRate = 2·B·log₂L","R = B/L","C = 10·log₁₀(SNR)"],a:1,e:"Nyquist (noiseless): BitRate = 2·B·log₂L. Shannon (noisy): C = B·log₂(1+SNR)."},
+    {q:"Which impairment means the signal LOSES energy over distance?",o:["distortion","noise","attenuation","multiplexing"],a:2,e:"Attenuation = energy loss. Distortion = shape change. Noise = added unwanted energy."},
+    {q:"SNR is defined as:",o:["noise power / signal power","signal power / noise power","bandwidth × levels","2 × log₂L"],a:1,e:"SNR = average signal power ÷ average noise power. SNR(dB) = 10·log₁₀(SNR)."},
+    {q:"Which fiber mode gives the best performance for long distances?",o:["multimode step-index","multimode graded-index","single-mode","coaxial"],a:2,e:"Single-mode fiber has the least dispersion — best for long-haul, high-rate links."},
+    {q:"Microwaves require ___ propagation.",o:["omnidirectional","line-of-sight","through-wall","underwater"],a:1,e:"Microwaves are unidirectional/line-of-sight (used for cellular, satellite, point-to-point links)."},
+    {q:"Which multiplexing technique combines ANALOG signals by frequency band?",o:["TDM","FDM","statistical TDM","PCM"],a:1,e:"FDM combines analog signals into separate frequency bands. TDM is for digital signals."},
+    {q:"In synchronous TDM with 4 sources at 1 bit/slot plus 1 framing bit, the frame size is:",o:["4 bits","5 bits","8 bits","2 bits"],a:1,e:"Frame = N×(bits/slot) + extra = 4×1 + 1 = 5 bits. Try it in the TDM calculator."},
+  ],
+};
+
+// ============ APP ENGINE ============
+let answeredCount=0, totalQuestions=0;
+Object.values(QUIZ).forEach(arr=>totalQuestions+=arr.length);
+
+function buildNav(){
+  const nav=document.getElementById('nav');
+  let lastGroup='';
+  SECTIONS.forEach(s=>{
+    if(s.group!==lastGroup){
+      const g=document.createElement('div');g.className='navsec';g.textContent=s.group;nav.appendChild(g);lastGroup=s.group;
+    }
+    const a=document.createElement('div');a.className='navlink';a.dataset.id=s.id;
+    a.innerHTML=`<span class="ch">${s.ch||'•'}</span><span>${s.label}</span>`;
+    a.onclick=()=>show(s.id);
+    nav.appendChild(a);
+  });
+}
+
+function show(id){
+  document.querySelectorAll('.section').forEach(e=>e.classList.remove('show'));
+  document.getElementById('sec-'+id).classList.add('show');
+  document.querySelectorAll('.navlink').forEach(n=>n.classList.toggle('active',n.dataset.id===id));
+  window.scrollTo({top:0,behavior:'smooth'});
+  if(LAB_INIT[id]&&!LAB_INIT[id].done){LAB_INIT[id].fn();LAB_INIT[id].done=true;}
+}
+
+function buildSections(){
+  const main=document.getElementById('main');
+  // Build a lowercase lookup for auto-tagging keywords
+  const glossLower={};
+  Object.keys(GLOSS).forEach(k=>glossLower[k.toLowerCase()]=k);
+  SECTIONS.forEach(s=>{
+    const sec=document.createElement('section');
+    sec.className='section'+(s.id==='home'?' show':'');
+    sec.id='sec-'+s.id;
+    sec.innerHTML=C[s.id]+(s.id!=='home'&&s.id!=='cheat'?'<footer>CPE 314 · Computer Networks · interactive exam prep · built from your course slides + past papers (2012, 2017)</footer>':'');
+    main.appendChild(sec);
+  });
+  // auto-add data-g to .kw spans whose text matches a glossary key
+  document.querySelectorAll('.kw:not([data-g])').forEach(el=>{
+    const key=glossLower[el.textContent.trim().toLowerCase()];
+    if(key) el.dataset.g=key;
+  });
+  // build quizzes
+  Object.keys(QUIZ).forEach(ch=>{
+    const host=document.getElementById('quiz-'+ch);
+    if(host) host.innerHTML=renderQuiz(ch);
+  });
+  attachGloss();
+  attachTabs();
+}
+
+function renderQuiz(ch){
+  let h=`<h2>Quick check — test yourself</h2>`;
+  QUIZ[ch].forEach((item,i)=>{
+    h+=`<div class="quiz-q" data-ch="${ch}" data-i="${i}">
+      <div class="qn">Q${i+1}</div><div class="qt">${item.q}</div>`;
+    item.o.forEach((opt,j)=>{
+      h+=`<div class="opt" onclick="answer('${ch}',${i},${j},this)">${opt}</div>`;
+    });
+    h+=`<div class="explain">${item.e}</div></div>`;
+  });
+  return h;
+}
+
+const answeredSet=new Set();
+function answer(ch,i,j,el){
+  const item=QUIZ[ch][i];
+  const box=el.parentElement;
+  if(box.dataset.locked) return;
+  box.dataset.locked='1';
+  const opts=box.querySelectorAll('.opt');
+  opts.forEach((o,k)=>{
+    if(k===item.a)o.classList.add('correct');
+    if(k===j&&j!==item.a)o.classList.add('wrong');
+    o.style.cursor='default';
+  });
+  box.querySelector('.explain').classList.add('show');
+  const key=ch+'-'+i;
+  if(!answeredSet.has(key)){answeredSet.add(key);answeredCount++;updateProgress();}
+}
+function updateProgress(){
+  const pct=Math.round(answeredCount/totalQuestions*100);
+  document.getElementById('pbar').style.width=pct+'%';
+  document.getElementById('ptxt').textContent=answeredCount+' / '+totalQuestions+' answered';
+}
+
+// glossary tooltips — works for .term and any [data-g] keyword
+function attachGloss(){
+  const tip=document.getElementById('tip');
+  function showTip(el,e){
+    const key=el.dataset.g; const g=GLOSS[key]; if(!g)return;
+    tip.innerHTML='<b>'+key+'</b> — '+g; tip.style.display='block'; moveTip(e);
+  }
+  document.querySelectorAll('[data-g]').forEach(t=>{
+    t.addEventListener('mouseenter',e=>showTip(t,e));
+    t.addEventListener('mousemove',moveTip);
+    t.addEventListener('mouseleave',()=>tip.style.display='none');
+    // tap-to-toggle on touch devices
+    t.addEventListener('click',e=>{
+      if(tip.style.display==='block'&&tip.dataset.for===t.dataset.g){tip.style.display='none';tip.dataset.for='';}
+      else{showTip(t,e);tip.dataset.for=t.dataset.g;}
+    });
+  });
+  function moveTip(e){
+    let x=(e.clientX||0)+14,y=(e.clientY||0)+14;
+    if(x+280>window.innerWidth)x=Math.max(8,(e.clientX||0)-290);
+    if(y+120>window.innerHeight)y=Math.max(8,(e.clientY||0)-120);
+    tip.style.left=x+'px';tip.style.top=y+'px';
+  }
+  // dismiss on outside click
+  document.addEventListener('click',e=>{if(!e.target.closest('[data-g]'))tip.style.display='none';},true);
+}
+
+// tabs (generic)
+function attachTabs(){
+  document.querySelectorAll('.tabs').forEach(group=>{
+    group.querySelectorAll('.tab').forEach(tab=>{
+      tab.onclick=()=>{
+        group.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+        tab.classList.add('active');
+        const parent=group.parentElement;
+        parent.querySelectorAll('.tabpane').forEach(p=>p.classList.remove('show'));
+        const pane=parent.querySelector('#pane-'+tab.dataset.pane);
+        if(pane)pane.classList.add('show');
+      };
+    });
+  });
+}
+
+// back-to-top
+window.addEventListener('scroll',()=>{
+  document.getElementById('topbtn').style.display=window.scrollY>400?'block':'none';
+});
+document.getElementById('topbtn').onclick=()=>window.scrollTo({top:0,behavior:'smooth'});
+
+
+// ============ LAB SIMULATIONS ============
+const LAB_INIT={};
+
+// ---- CH7: Distance-Vector ----
+// Network: A-B(2), B-C(3), C-D(1), A-C(7) ; line + shortcut
+let dvState=null;
+function initDV(){
+  const edges={ 'A-B':2,'B-A':2,'B-C':3,'C-B':3,'C-D':1,'D-C':1,'A-C':7,'C-A':7 };
+  const nodes=['A','B','C','D'];
+  const neigh={A:['B','C'],B:['A','C'],C:['B','D','A'],D:['C']};
+  function freshTables(){
+    const t={};
+    nodes.forEach(n=>{t[n]={}; nodes.forEach(m=>{t[n][m]= n===m?0:(edges[n+'-'+m]??Infinity);});});
+    return t;
+  }
+  dvState={round:0,tables:freshTables(),edges,nodes,neigh};
+  drawDVGraph();renderDVTables();
+  document.getElementById('dv-step').onclick=dvStep;
+  document.getElementById('dv-reset').onclick=()=>{dvState.round=0;dvState.tables=freshTables();document.getElementById('dv-round').textContent=0;document.getElementById('dv-state').textContent='Only direct links known';renderDVTables();drawDVGraph();};
+}
+function dvStep(){
+  const {tables,nodes,neigh}=dvState;
+  const next=JSON.parse(JSON.stringify(tables),(k,v)=>v===null?Infinity:v);
+  // because Infinity doesn't survive JSON; rebuild manually
+  const nt={};
+  nodes.forEach(n=>{nt[n]={};nodes.forEach(m=>{nt[n][m]=tables[n][m];});});
+  let changed=false;
+  nodes.forEach(x=>{
+    neigh[x].forEach(v=>{
+      nodes.forEach(y=>{
+        const via=(dvState.edges[x+'-'+v]??Infinity)+tables[v][y];
+        if(via<nt[x][y]){nt[x][y]=via;changed=true;}
+      });
+    });
+  });
+  dvState.tables=nt;dvState.round++;
+  document.getElementById('dv-round').textContent=dvState.round;
+  document.getElementById('dv-state').textContent= changed?'Vectors exchanged — routes improving':'Converged ✓ (no more changes)';
+  document.getElementById('dv-state').style.color= changed?'var(--yellow)':'var(--accent2)';
+  renderDVTables();
+}
+function drawDVGraph(){
+  const pos={A:[60,40],B:[230,40],C:[230,150],D:[60,150]};
+  const e=dvState.edges;
+  const line=(a,b,w)=>`<line x1="${pos[a][0]}" y1="${pos[a][1]}" x2="${pos[b][0]}" y2="${pos[b][1]}" stroke="#3a4a5e" stroke-width="2"/><text x="${(pos[a][0]+pos[b][0])/2}" y="${(pos[a][1]+pos[b][1])/2-6}" fill="#ffd23f" font-size="12">${w}</text>`;
+  let svg=`<svg viewBox="0 0 300 200" style="max-width:320px">`;
+  svg+=line('A','B',2)+line('B','C',3)+line('C','D',1)+line('A','C',7);
+  Object.keys(pos).forEach(n=>{
+    svg+=`<circle cx="${pos[n][0]}" cy="${pos[n][1]}" r="16" fill="#1a2433" stroke="#ff7a1a" stroke-width="2"/><text x="${pos[n][0]}" y="${pos[n][1]+5}" text-anchor="middle" font-size="14" font-weight="700">${n}</text>`;
+  });
+  svg+=`</svg>`;
+  document.getElementById('dv-graph').innerHTML=svg;
+}
+function renderDVTables(){
+  const {tables,nodes}=dvState;
+  let h='<div class="grid2" style="margin-top:8px">';
+  nodes.forEach(n=>{
+    h+=`<div class="card" style="padding:10px"><div style="font-size:12px;color:var(--accent)">Router ${n}'s distance vector</div><table style="margin:6px 0 0"><tr><th>to</th>`;
+    nodes.forEach(m=>h+=`<th>${m}</th>`);h+='</tr><tr><td>cost</td>';
+    nodes.forEach(m=>{const v=tables[n][m];h+=`<td style="color:${v===Infinity?'#ff5d5d':'var(--accent2)'}">${v===Infinity?'∞':v}</td>`;});
+    h+='</tr></table></div>';
+  });
+  h+='</div>';
+  document.getElementById('dv-tables').innerHTML=h;
+}
+LAB_INIT.ch7={fn:initDV,done:false};
+
+// ---- CH8: SNMP walkthrough ----
+const snmpSteps=[
+  {t:"Manager builds a GetRequest",d:"The manager (SNMP client) wants <b>udpInDatagrams</b>. SMI tells it the object's OID is <code>1.3.6.1.2.1.7.1</code> and how to encode it (BER). SNMP packages this as a <b>GetRequest</b> PDU."},
+  {t:"Request travels to the Agent",d:"The GetRequest PDU is sent over UDP to the agent (SNMP server) running on the router."},
+  {t:"Agent looks up its MIB",d:"The agent finds the object in its <b>MIB</b> using lexicographic ordering and reads the current value (say, 142 datagrams)."},
+  {t:"Agent returns a Response",d:"SNMP wraps the value in a <b>Response</b> PDU and sends it back. The manager now knows the count. (If something had gone wrong unprompted, the agent could fire a <b>Trap</b>.)"},
+];
+function initSNMP(){
+  let step=0;
+  const stage=document.getElementById('snmp-stage');
+  function render(){
+    let h='';
+    snmpSteps.forEach((s,i)=>{
+      const on=i<=step;
+      h+=`<div class="flow-step" style="opacity:${on?1:.3}"><div class="n${i%2?' alt':''}">${i+1}</div><div><b>${s.t}</b>${on?'<br><span style="font-size:12.5px;color:var(--muted)">'+s.d+'</span>':''}</div></div>`;
+    });
+    stage.innerHTML=h;
+  }
+  render();
+  document.getElementById('snmp-next').onclick=()=>{if(step<snmpSteps.length-1){step++;render();}};
+  document.getElementById('snmp-reset').onclick=()=>{step=0;render();};
+}
+LAB_INIT.ch8={fn:initSNMP,done:false};
+
+// ---- CH9: Parity & checksum ----
+function initParity(){
+  let data=[1,0,1,1,0,0,1,0];
+  let rx=[...data];
+  const bitsEl=document.getElementById('parity-bits');
+  const rxEl=document.getElementById('rx-bits');
+  function bitHTML(arr,editable,prefix){
+    return arr.map((b,i)=>`<span class="pbit" data-pre="${prefix}" data-i="${i}" style="display:inline-block;width:26px;text-align:center;cursor:pointer;border:1px solid var(--line);border-radius:5px;margin:2px;padding:3px 0;background:${b?'rgba(255,122,26,.15)':'var(--panel2)'};color:${b?'var(--accent)':'var(--muted)'}">${b}</span>`).join('');
+  }
+  function compute(){
+    const ones=data.reduce((a,b)=>a+b,0);
+    const parity=ones%2;
+    document.getElementById('parity-bit').textContent=parity;
+    // checksum: treat as one 8-bit number, complement low byte (toy)
+    const val=parseInt(data.join(''),2);
+    const cks=((~val)&0xFF).toString(16).padStart(2,'0').toUpperCase();
+    document.getElementById('checksum-val').textContent=cks;
+    return parity;
+  }
+  function verdict(){
+    const parity=compute();
+    const rxOnes=rx.reduce((a,b)=>a+b,0);
+    const rxParity=rxOnes%2;
+    const flips=rx.filter((b,i)=>b!==data[i]).length;
+    const detected=(rxParity!==parity);
+    let msg;
+    if(flips===0) msg='<b style="color:var(--accent2)">No errors.</b> Received word matches sent word.';
+    else if(detected) msg=`<b style="color:var(--accent2)">✓ Error DETECTED!</b> ${flips} bit(s) flipped → parity mismatch caught it.`;
+    else msg=`<b style="color:var(--bad)">✗ Error MISSED!</b> ${flips} bits flipped (even number) → parity slips through. This is why CRC is stronger.`;
+    document.getElementById('parity-verdict').innerHTML=msg;
+  }
+  function draw(){
+    bitsEl.innerHTML=bitHTML(data,true,'d');
+    rxEl.innerHTML=bitHTML(rx,true,'r');
+    bitsEl.querySelectorAll('.pbit').forEach(s=>s.onclick=()=>{const i=+s.dataset.i;data[i]^=1;rx[i]=data[i];draw();verdict();});
+    rxEl.querySelectorAll('.pbit').forEach(s=>s.onclick=()=>{const i=+s.dataset.i;rx[i]^=1;draw();verdict();});
+  }
+  draw();verdict();
+}
+LAB_INIT.ch9parity={fn:initParity,done:false};
+
+// ---- CH9: CSMA scenario ----
+function initCSMA(){
+  let mode='CD';
+  const log=document.getElementById('csma-log');
+  document.getElementById('csma-cd').onclick=function(){mode='CD';this.classList.add('active');document.getElementById('csma-ca').classList.remove('active');log.innerHTML='';};
+  document.getElementById('csma-ca').onclick=function(){mode='CA';this.classList.add('active');document.getElementById('csma-cd').classList.remove('active');log.innerHTML='';};
+  document.getElementById('csma-run').onclick=()=>{
+    const lines = mode==='CD' ? [
+      ['A & B both have data and sense the medium → idle','var(--muted)'],
+      ['Both start transmitting almost at once','var(--yellow)'],
+      ['💥 COLLISION — signals overlap on the wire','var(--bad)'],
+      ['Both DETECT it (energy level rises), abort & send jam','var(--blue)'],
+      ['Each waits a random backoff, then retries → success ✓','var(--accent2)'],
+    ] : [
+      ['A wants to send, senses medium idle, waits DIFS','var(--muted)'],
+      ['A sends RTS (Request To Send) to AP','var(--yellow)'],
+      ['AP replies CTS (Clear To Send) — heard by ALL','var(--blue)'],
+      ['Other stations set NAV timer & stay quiet (avoidance)','var(--violet)'],
+      ['A sends Data; AP returns ACK → no collision ✓','var(--accent2)'],
+    ];
+    log.innerHTML='';
+    lines.forEach((l,i)=>setTimeout(()=>{
+      log.innerHTML+=`<div class="flow-step" style="border:none;padding:5px 0"><div class="n" style="background:${l[1]};width:22px;height:22px;font-size:11px">${i+1}</div><div style="color:${l[1]}">${l[0]}</div></div>`;
+    },i*420));
+  };
+}
+LAB_INIT.ch9csma={fn:initCSMA,done:false};
+
+// combine ch9 inits
+LAB_INIT.ch9={fn:()=>{initStuff();initParity();initCSMA();},done:false};
+
+// ---- CH9: byte stuffing ----
+function initStuff(){
+  const FLAG='F',ESC='E';
+  function run(){
+    const raw=(document.getElementById('stuff-in').value||'').replace(/\s/g,'');
+    // stuff: before any F or E, insert ESC
+    let stuffed='';
+    for(const ch of raw){ if(ch===FLAG||ch===ESC) stuffed+=ESC; stuffed+=ch; }
+    const framed=FLAG+stuffed+FLAG;
+    // unstuff
+    let un='',skip=false;
+    const body=framed.slice(1,-1);
+    for(let i=0;i<body.length;i++){ if(!skip&&body[i]===ESC){skip=true;continue;} un+=body[i];skip=false; }
+    const ok=un===raw;
+    const color=c=>c===FLAG?'var(--accent)':(c===ESC?'var(--yellow)':'var(--ink)');
+    const render=str=>[...str].map(c=>`<span style="display:inline-block;min-width:18px;text-align:center;border:1px solid var(--line);margin:1px;padding:2px 4px;border-radius:4px;background:var(--panel2);color:${color(c)}">${c}</span>`).join('');
+    document.getElementById('stuff-out').innerHTML=
+      `<div style="margin:4px 0"><b>Raw:</b> ${render(raw)}</div>`+
+      `<div style="margin:4px 0"><b>Sent frame (F…F, escapes stuffed):</b><br>${render(framed)}</div>`+
+      `<div style="margin:4px 0"><b>Receiver unstuffs →</b> ${render(un)} ${ok?'<span style="color:var(--accent2)">✓ matches original</span>':'<span style="color:var(--bad)">mismatch</span>'}</div>`+
+      `<div style="font-size:12px;color:var(--muted)">Orange = flag (frame boundary) · Yellow = stuffed escape byte. The escapes are removed by the receiver so the data is recovered exactly.</div>`;
+  }
+  document.getElementById('stuff-go').onclick=run; run();
+}
+
+// ---- CH10: Ethernet frame ----
+function initFrame(){
+  const fields=[
+    ['Preamble','7 B','56 bits of alternating 1/0 to synchronize the receiver clock.','#ffd23f'],
+    ['SFD','1 B','Start Frame Delimiter (10101011) — signals the real frame begins now.','#ffb347'],
+    ['Dst Addr','6 B','MAC address of the destination NIC.','#4aa3ff'],
+    ['Src Addr','6 B','MAC address of the sending NIC.','#4aa3ff'],
+    ['Type','2 B','Identifies the upper-layer protocol (e.g. IPv4).','#b48cff'],
+    ['Data + Pad','46–1500 B','The payload; padded up to 46 B minimum to keep min frame size.','#ff7a1a'],
+    ['CRC','4 B','Cyclic Redundancy Check — detects bit errors in the frame.','#33d6a6'],
+  ];
+  const widths=[40,16,42,42,28,150,30];
+  const total=widths.reduce((a,b)=>a+b,0);
+  let x=0,svg=`<svg viewBox="0 0 ${total} 70" style="width:100%;max-width:680px">`;
+  fields.forEach((f,i)=>{
+    svg+=`<g class="node" data-i="${i}"><rect x="${x}" y="14" width="${widths[i]}" height="34" fill="${f[3]}22" stroke="${f[3]}" stroke-width="1.5" rx="3"/><text x="${x+widths[i]/2}" y="30" text-anchor="middle" font-size="6.5" fill="${f[3]}">${f[0]}</text><text x="${x+widths[i]/2}" y="42" text-anchor="middle" font-size="6" fill="#8b98a9">${f[1]}</text></g>`;
+    x+=widths[i];
+  });
+  svg+=`</svg>`;
+  const host=document.getElementById('frame-svg');host.innerHTML=svg;
+  const info=document.getElementById('frame-info');
+  info.innerHTML='Hover or tap a field to inspect it.';
+  host.querySelectorAll('.node').forEach(g=>{
+    const f=fields[+g.dataset.i];
+    const act=()=>info.innerHTML=`<b style="color:${f[3]}">${f[0]} (${f[1]})</b> — ${f[2]}`;
+    g.addEventListener('mouseenter',act);
+    g.addEventListener('click',act);
+  });
+}
+LAB_INIT.ch10frame={fn:initFrame,done:false};
+
+// ---- CH10: Switch learning ----
+function initSwitch(){
+  let table={}; // mac->port
+  const ports={H1:1,H2:2,H3:3,H4:4};
+  const out=document.getElementById('sw-out');
+  const tbl=document.getElementById('sw-table');
+  function render(){
+    let h='<table><tr><th>MAC (host)</th><th>Port</th></tr>';
+    const keys=Object.keys(table);
+    if(!keys.length)h+='<tr><td colspan="2" style="color:var(--muted)">empty — switch will flood</td></tr>';
+    keys.forEach(k=>h+=`<tr><td>${k}</td><td>${table[k]}</td></tr>`);
+    h+='</table>';tbl.innerHTML=h;
+  }
+  render();
+  document.getElementById('sw-send').onclick=()=>{
+    const s=document.getElementById('sw-src').value,d=document.getElementById('sw-dst').value;
+    if(s===d){out.innerHTML='<span style="color:var(--bad)">Source and destination are the same — pick different hosts.</span>';return;}
+    table[s]=ports[s]; // learns source
+    let msg=`<b>Frame ${s}→${d}</b> arrives on port ${ports[s]}. Switch learns ${s}=port ${ports[s]}. `;
+    if(table[d]) msg+=`<span style="color:var(--accent2)">Knows ${d}=port ${table[d]} → forwards directly (no flood) ✓</span>`;
+    else msg+=`<span style="color:var(--yellow)">Doesn't know ${d} yet → floods to all other ports.</span>`;
+    out.innerHTML=msg;render();
+  };
+  document.getElementById('sw-reset').onclick=()=>{table={};out.innerHTML='';render();};
+}
+LAB_INIT.ch10switch={fn:initSwitch,done:false};
+LAB_INIT.ch10={fn:()=>{initFrame();initSwitch();initNetLen();},done:false};
+
+// ---- CH10: network length ----
+function initNetLen(){
+  function run(){
+    const vals=(document.getElementById('nl-in').value||'').split(/[, ]+/).map(Number).filter(n=>!isNaN(n)&&n>0).sort((a,b)=>b-a);
+    const out=document.getElementById('nl-out');
+    if(vals.length<2){out.innerHTML='<span style="color:var(--bad)">Enter at least two distances.</span>';return;}
+    const len=vals[0]+vals[1];
+    out.innerHTML=`The two longest cables are <b>${vals[0]} m</b> and <b>${vals[1]} m</b>. `+
+      `Network length = longest station-to-station path = <b style="color:var(--accent2)">${vals[0]} + ${vals[1]} = ${len} m</b>.`+
+      `<div style="font-size:12px;color:var(--muted);margin-top:4px">(A frame from the farthest station crosses the hub to the second-farthest — that worst-case path is the network's length.)</div>`;
+  }
+  document.getElementById('nl-go').onclick=run; run();
+}
+
+// ---- CH11: SDN layers ----
+function initSDN(){
+  const layers=[
+    ['Network-control Apps','#b48cff','Routing, access control, load balancing. The intelligence that decides what the network should do.'],
+    ['↑ Northbound API (REST)','#33d6a6','Connects apps to the controller. App "talks down" to controller. Example: HTTP REST.'],
+    ['SDN Controller (Network OS)','#4aa3ff','Holds network-wide state: link-state info, host info, switch info, flow tables, statistics.'],
+    ['↓ Southbound API (OpenFlow)','#ff7a1a','Connects controller to switches. Runs over TCP port 6653. Also SNMP. Controller "talks down" to switches.'],
+    ['SDN-controlled Switches','#ffd23f','The data plane. Pure muscle — apply match-plus-action flow tables: forward, drop, modify-field.'],
+  ];
+  let svg='<svg viewBox="0 0 360 230" style="width:100%;max-width:500px">';
+  layers.forEach((l,i)=>{
+    const y=8+i*44;
+    svg+=`<g class="node" data-i="${i}"><rect x="20" y="${y}" width="320" height="36" rx="6" fill="${l[1]}22" stroke="${l[1]}" stroke-width="1.5"/><text x="180" y="${y+22}" text-anchor="middle" font-size="11" fill="${l[1]}">${l[0]}</text></g>`;
+  });
+  svg+='</svg>';
+  const host=document.getElementById('sdn-svg');host.innerHTML=svg;
+  const info=document.getElementById('sdn-info');
+  info.innerHTML='Click a layer to inspect it.';
+  host.querySelectorAll('.node').forEach(g=>{
+    const l=layers[+g.dataset.i];
+    g.onclick=()=>info.innerHTML=`<b style="color:${l[1]}">${l[0]}</b> — ${l[2]}`;
+  });
+}
+LAB_INIT.ch11sdn={fn:initSDN,done:false};
+
+// ---- CH11: flow table ----
+function initFlow(){
+  let rules=[];
+  const tbl=document.getElementById('flow-table');
+  function render(){
+    let h='<table><tr><th>#</th><th>In-port</th><th>Src</th><th>Dst</th><th>Action</th></tr>';
+    if(!rules.length)h+='<tr><td colspan="5" style="color:var(--muted)">no rules yet — add match+action above</td></tr>';
+    rules.forEach((r,i)=>h+=`<tr><td>${i+1}</td><td>${r.port}</td><td>${r.src}</td><td>${r.dst}</td><td style="color:var(--accent2)">${r.act}</td></tr>`);
+    h+='</table>';tbl.innerHTML=h;
+  }
+  render();
+  document.getElementById('f-add').onclick=()=>{
+    rules.push({port:document.getElementById('f-port').value,src:document.getElementById('f-src').value,dst:document.getElementById('f-dst').value,act:document.getElementById('f-act').value});
+    render();
+  };
+}
+LAB_INIT.ch11flow={fn:initFlow,done:false};
+LAB_INIT.ch11={fn:()=>{initSDN();initFlow();},done:false};
+
+// ---- CH12: CSMA/CA RTS-CTS-NAV ----
+const caSteps=[
+  {t:'Sense + DIFS',d:'Source senses the channel idle and waits a DIFS interval.'},
+  {t:'RTS →',d:'Source sends a short <b>RTS</b> (Request To Send) to the destination/AP.'},
+  {t:'← CTS',d:'Destination replies <b>CTS</b> (Clear To Send), heard by all nearby stations — including any hidden ones.'},
+  {t:'NAV set',d:'Every other station sets its <b>NAV</b> timer and stays silent for the reserved duration → collision avoided.'},
+  {t:'Data + ACK',d:'Source sends Data; destination returns an <b>ACK</b>. Transmission succeeds with no collision.'},
+];
+function initCA(){
+  let step=0;const stage=document.getElementById('ca-stage');
+  function render(){
+    let h='';caSteps.forEach((s,i)=>{const on=i<=step;
+      h+=`<div class="flow-step" style="opacity:${on?1:.3}"><div class="n${i%2?' alt':''}">${i+1}</div><div><b>${s.t}</b>${on?'<br><span style="font-size:12.5px;color:var(--muted)">'+s.d+'</span>':''}</div></div>`;});
+    stage.innerHTML=h;
+  }
+  render();
+  document.getElementById('ca-next').onclick=()=>{if(step<caSteps.length-1){step++;render();}};
+  document.getElementById('ca-reset').onclick=()=>{step=0;render();};
+}
+LAB_INIT.ch12ca={fn:initCA,done:false};
+
+// ---- CH12: Mobile IP ----
+const mipSteps=[
+  {t:'Phase 1 — Agent Discovery',d:'The mobile, now on a foreign network, hears advertisements and discovers a <b>Foreign Agent</b>. It obtains a <b>care-of address</b>.'},
+  {t:'Phase 2 — Registration',d:'The mobile registers its care-of address with its <b>Home Agent</b> (via the foreign agent), so the home agent knows where to forward packets.'},
+  {t:'Phase 3 — Data In (tunnel)',d:'A remote host sends to the mobile&rsquo;s <b>home address</b>. The <b>Home Agent</b> intercepts it and <b>tunnels</b> it to the care-of address, where the foreign agent delivers it.'},
+  {t:'Reply goes direct (triangle!)',d:'The mobile replies <b>directly</b> to the remote host. Long way in (via home agent), short way out — the classic <b>triangle routing</b> inefficiency.'},
+];
+function initMIP(){
+  let step=0;const stage=document.getElementById('mip-stage');
+  function render(){
+    let h='';mipSteps.forEach((s,i)=>{const on=i<=step;
+      h+=`<div class="flow-step" style="opacity:${on?1:.3}"><div class="n${i%2?' alt':''}">${i+1}</div><div><b>${s.t}</b>${on?'<br><span style="font-size:12.5px;color:var(--muted)">'+s.d+'</span>':''}</div></div>`;});
+    stage.innerHTML=h;
+  }
+  render();
+  document.getElementById('mip-next').onclick=()=>{if(step<mipSteps.length-1){step++;render();}};
+  document.getElementById('mip-reset').onclick=()=>{step=0;render();};
+}
+LAB_INIT.ch12mip={fn:initMIP,done:false};
+LAB_INIT.ch12={fn:()=>{initCA();initMIP();},done:false};
+
+// ---- CH13: Nyquist/Shannon ----
+function initRate(){
+  const B=document.getElementById('r-b'),L=document.getElementById('r-l'),S=document.getElementById('r-s');
+  function fmt(bps){
+    if(bps>=1e6)return (bps/1e6).toFixed(2)+' Mbps';
+    if(bps>=1e3)return (bps/1e3).toFixed(1)+' kbps';
+    return Math.round(bps)+' bps';
+  }
+  function calc(){
+    const b=+B.value,l=+L.value,snrDb=+S.value;
+    document.getElementById('r-bv').textContent=b;
+    document.getElementById('r-lv').textContent=l;
+    document.getElementById('r-sv').textContent=snrDb;
+    const nyq=2*b*Math.log2(l);
+    const snr=Math.pow(10,snrDb/10);
+    const sha=b*Math.log2(1+snr);
+    document.getElementById('r-nyq').textContent=fmt(nyq);
+    document.getElementById('r-sha').textContent=fmt(sha);
+    const adv=document.getElementById('r-advice');
+    if(nyq>sha) adv.innerHTML=`Your chosen <b>L=${l}</b> pushes Nyquist (${fmt(nyq)}) <b>above</b> the Shannon ceiling (${fmt(sha)}) — noise won't allow it. Lower L or improve SNR.`;
+    else adv.innerHTML=`Nyquist (${fmt(nyq)}) is within the Shannon ceiling (${fmt(sha)}) — feasible. The real usable rate is the lower of the two.`;
+  }
+  [B,L,S].forEach(el=>el.oninput=calc);
+  calc();
+}
+LAB_INIT.ch13={fn:()=>{initRate();initTDM();},done:false};
+
+// ---- CH13: synchronous TDM calculator ----
+function initTDM(){
+  const ids=['t-n','t-r','t-bps','t-x'];
+  function fmt(bps){
+    if(bps>=1e6)return (bps/1e6).toFixed(bps%1e6?2:0)+' Mbps';
+    if(bps>=1e3)return (bps/1e3).toFixed(bps%1e3?1:0)+' kbps';
+    return Math.round(bps)+' bps';
+  }
+  function run(){
+    const n=+document.getElementById('t-n').value;
+    const rkbps=+document.getElementById('t-r').value;
+    const bps=+document.getElementById('t-bps').value;
+    const x=+document.getElementById('t-x').value;
+    const r=rkbps*1000; // bits/sec per source
+    const frameSize=n*bps+x;                 // bits per output frame
+    const frameRate=r/bps;                   // frames/sec (one frame per 'bps' bits of each source)
+    const duration=1/frameRate;              // seconds
+    const dataRate=frameSize*frameRate;      // bits/sec
+    const eff=(n*bps)/frameSize*100;
+    document.getElementById('tdm-out').innerHTML=`
+      <table style="margin-top:10px">
+      <tr><th>Quantity</th><th>Formula</th><th>Result</th></tr>
+      <tr><td>a. Output frame size</td><td>N×(bits/src) + extra</td><td><b>${n}×${bps} + ${x} = ${frameSize} bits</b></td></tr>
+      <tr><td>b. Output frame rate</td><td>= input source rate / bits-per-slot</td><td><b>${fmt(frameRate*1).replace('bps','').trim()} = ${frameRate.toLocaleString()} frames/sec</b></td></tr>
+      <tr><td>c. Frame duration</td><td>1 / frame rate</td><td><b>${(duration*1e6).toFixed(2)} µs</b></td></tr>
+      <tr><td>d. Output data rate</td><td>frame size × frame rate</td><td><b style="color:var(--accent2)">${fmt(dataRate)}</b></td></tr>
+      <tr><td>e. Efficiency</td><td>useful bits / total bits</td><td><b style="color:var(--accent)">${(n*bps)}/${frameSize} = ${eff.toFixed(1)}%</b></td></tr>
+      </table>
+      <div class="note cyan" style="margin-top:8px;font-size:12.5px">With the exam defaults (N=20, 100 kbps, 1 bit/slot, 1 extra bit): frame=21 bits, rate=100k frames/s, duration≈10 µs, data rate=<b>2.1 Mbps</b>, efficiency=<b>95.2%</b>. The duration the exam wrote as "0.21 ms" was a slip — 1/100,000 s = 10 µs.</div>`;
+  }
+  ids.forEach(id=>{const el=document.getElementById(id);if(el)el.oninput=run;});
+  run();
+}
+
+// ---- MOCK EXAM ----
+function initMock(){
+  const sel={}; // qIndex -> chosenIndex
+  const body=document.getElementById('mock-body');
+  function render(){
+    let h='';
+    MOCK.forEach((q,i)=>{
+      h+=`<div class="quiz-q" id="mq-${i}"><div class="qn">Q${i+1} · ${q[3]}</div><div class="qt">${q[0]}</div>`;
+      q[1].forEach((opt,j)=>{
+        const chosen=sel[i]===j;
+        h+=`<div class="opt${chosen?' chosen':''}" data-q="${i}" data-j="${j}" style="${chosen?'border-color:var(--blue);background:rgba(74,163,255,.12)':''}">${String.fromCharCode(97+j)}) ${opt}</div>`;
+      });
+      h+=`<div class="explain" id="mex-${i}">${q[4]}</div></div>`;
+    });
+    body.innerHTML=h;
+    body.querySelectorAll('.opt').forEach(o=>o.onclick=()=>{
+      const qi=+o.dataset.q;
+      if(document.getElementById('mock-body').dataset.graded)return;
+      sel[qi]=+o.dataset.j; render(); updateCount();
+    });
+    updateCount();
+  }
+  function updateCount(){
+    const n=Object.keys(sel).length;
+    document.getElementById('mock-ans').textContent=n;
+    document.getElementById('mock-bar').style.width=(n/MOCK.length*100)+'%';
+  }
+  document.getElementById('mock-grade').onclick=()=>{
+    let score=0; const byTopic={};
+    MOCK.forEach((q,i)=>{
+      const t=q[3]; byTopic[t]=byTopic[t]||{c:0,n:0}; byTopic[t].n++;
+      const box=document.getElementById('mq-'+i);
+      const opts=box.querySelectorAll('.opt');
+      opts.forEach((o,j)=>{
+        o.style.cursor='default';
+        if(j===q[2])o.classList.add('correct');
+        if(sel[i]===j&&j!==q[2])o.classList.add('wrong');
+      });
+      document.getElementById('mex-'+i).classList.add('show');
+      if(sel[i]===q[2]){score++;byTopic[t].c++;}
+    });
+    body.dataset.graded='1';
+    document.getElementById('mock-score').textContent=score+' / '+MOCK.length;
+    const pct=Math.round(score/MOCK.length*100);
+    let grade = pct>=80?'🎯 Excellent':pct>=65?'✓ Solid':pct>=50?'Keep going':'Review needed';
+    let rows=Object.keys(byTopic).map(t=>`<tr><td>${t}</td><td>${byTopic[t].c}/${byTopic[t].n}</td></tr>`).join('');
+    document.getElementById('mock-result').innerHTML=
+      `<div class="card tinted"><h3 style="margin-top:0">${grade} — ${pct}%</h3>
+       <table style="margin-top:6px"><tr><th>Topic</th><th>Correct</th></tr>${rows}</table>
+       <p style="font-size:12.5px;color:var(--muted);margin-top:8px">Scroll up to review every question — correct answers are green, your wrong picks are red, with explanations revealed.</p></div>`;
+    document.getElementById('mock-result').scrollIntoView&&document.getElementById('mock-result').scrollIntoView({behavior:'smooth'});
+  };
+  document.getElementById('mock-reset').onclick=()=>{
+    for(const k in sel)delete sel[k];
+    delete body.dataset.graded;
+    document.getElementById('mock-score').textContent='—';
+    document.getElementById('mock-result').innerHTML='';
+    render();
+  };
+  render();
+}
+LAB_INIT.mock={fn:initMock,done:false};
+
+// ---- MEMORY TRICKS: flashcards ----
+function initFlash(){
+  let idx=0, flipped=false, got=0, seen=0;
+  const card=document.getElementById('flash-card');
+  const stat=document.getElementById('flash-stat');
+  function setText(html,label){
+    card.innerHTML='<div style="font-size:11px;color:var(--muted);letter-spacing:1px">'+label+'</div>'+
+      '<div style="font-size:17px;margin-top:10px">'+html+'</div>';
+  }
+  function render(){
+    if(flipped) setText('<span style="color:var(--accent2)">'+FLASH[idx][1]+'</span>','(answer — click to flip back)');
+    else setText('<b>'+FLASH[idx][0]+'</b>','CLICK TO FLIP');
+    stat.textContent=`Card ${idx+1} / ${FLASH.length}`+(seen?`  ·  ${got}/${seen} correct`:'');
+    card.onclick=flip;
+  }
+  function flip(){flipped=!flipped;render();}
+  function next(correct){
+    seen++; if(correct)got++;
+    if(idx<FLASH.length-1){idx++;flipped=false;render();}
+    else{
+      const pct=Math.round(got/seen*100);
+      card.innerHTML='<div style="font-size:11px;color:var(--muted);letter-spacing:1px">DONE</div>'+
+        '<div style="font-size:20px;margin-top:8px">'+(pct>=80?'🎯':'📚')+' '+got+' / '+seen+' correct ('+pct+'%)</div>'+
+        '<div style="font-size:12px;color:var(--muted);margin-top:6px">Tap to restart the deck</div>';
+      stat.textContent='Finished — '+got+'/'+seen+' correct';
+      card.onclick=()=>{idx=0;flipped=false;got=0;seen=0;render();};
+    }
+  }
+  document.getElementById('flash-good').onclick=()=>next(true);
+  document.getElementById('flash-bad').onclick=()=>next(false);
+  render();
+}
+LAB_INIT.tricks={fn:initFlash,done:false};
+
+buildNav();
+buildSections();
+// run home (no lab) and pre-init nothing; labs init on first visit
+updateProgress();
+
+</script>
+</body>
+</html>
