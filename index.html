@@ -182,6 +182,7 @@ footer{color:var(--muted);font-size:11px;margin-top:40px;border-top:1px solid va
 // ============ NAV STRUCTURE ============
 const SECTIONS = [
   {id:'home', ch:'', label:'Start Here', group:'OVERVIEW'},
+  {id:'layers', ch:'◆', label:'How the Layers Work', group:'OVERVIEW'},
   {id:'ch7', ch:'7', label:'Unicast Routing', group:'NETWORK LAYER'},
   {id:'ch8', ch:'8', label:'Network Management', group:'NETWORK LAYER'},
   {id:'ch9', ch:'9', label:'Link Layer & MAC', group:'DATA-LINK LAYER'},
@@ -199,6 +200,15 @@ const SECTIONS = [
 const GLOSS = {
   // --- Ch7 routing ---
   'datagram':'A packet at the network (IP) layer — self-contained and independently routed, carrying its own source & destination IP. Connectionless: best-effort, may arrive out of order.',
+  'segment':'The data unit at the transport layer (TCP). Carries port numbers so the data reaches the right program on the host.',
+  'frame':'The data unit at the data-link layer. Wraps a datagram with MAC addresses + error-check bits to cross ONE link.',
+  'port':'A transport-layer number identifying which program/process on a host the data belongs to (e.g. 443 = HTTPS).',
+  'IP address':'A global network-layer address that works anywhere on the internet — used by routers to deliver a datagram end-to-end.',
+  'MAC address':'A local data-link address (48 bits) identifying a device on one link. Changes meaning hop-by-hop; only valid on the current link.',
+  'encapsulation':'Each layer wrapping the data from the layer above with its own header (and sometimes trailer). The receiver unwraps in reverse (decapsulation).',
+  'router':'A network-layer (L3) device that forwards datagrams between different networks using IP addresses and a forwarding table.',
+  'switch':'A data-link (L2) device that forwards frames within one network using MAC addresses.',
+  'hop':'One link between two adjacent nodes. A datagram crosses many hops; at each one it is re-wrapped in a new frame.',
   'unicast routing':'One-to-one delivery — routing a datagram to a single destination (vs multicast/broadcast).',
   'AS':'Autonomous System — a large network or group of networks under one unified routing policy. The Internet is a collection of ASes.',
   'RIP':'Routing Information Protocol — distance-vector, uses HOP COUNT as its metric (max 15; 16 = infinity/unreachable).',
@@ -318,6 +328,70 @@ C.home = `
 <div class="flow-step"><div class="n">12</div><div><b>Wireless & Mobile IP</b> — <span class="kw">802.11</span> WLANs (BSS/ESS, CSMA/CA), Bluetooth, WiMAX, and how a host keeps its IP while roaming via <span class="kw">home/foreign agents</span>.</div></div>
 <div class="flow-step" style="border:none"><div class="n">13</div><div><b>Physical Layer & Media</b> — Turning bits into signals: bandwidth, <span class="kw">Nyquist</span> & <span class="kw">Shannon</span> limits, impairments, multiplexing, and guided vs unguided media.</div></div>
 </div>
+
+<div class="note blue"><b>New to this?</b> Start with <b>◆ How the Layers Work</b> in the sidebar — it explains the whole layered model (and why routing, the link layer, and management each exist) with an animated packet you can watch travel the network. Everything in chapters 7–13 is just one layer doing its job.</div>
+`;
+
+// ---------- FOUNDATIONS: HOW THE LAYERS WORK ----------
+C.layers = `
+<div class="crumb">FOUNDATIONS · READ FIRST</div>
+<h1 class="title"><span class="num">◆</span> How the Layers Work</h1>
+<p class="lead">Before the chapters: <i>why</i> is a network split into layers, how many are there, and what does each one actually handle? Once this clicks, every later chapter becomes "oh — that's just the <b>X layer</b> doing its job."</p>
+
+<h2>Why layers at all?</h2>
+<div class="card">
+<p>Moving data from an app on your laptop to a server across the world is a <b>huge</b> problem. Solving it all at once is impossible, so we split it into <span class="kw" data-g="encapsulation">layers</span> — each does <b>one job</b> and trusts the layer below to do its own.</p>
+<div class="note cyan"><b>Analogy — posting a letter:</b> you write it (don't care how trucks work) → seal it in an addressed envelope (don't care about roads) → the post office routes it (doesn't care what the letter says) → a truck drives it to the next depot (doesn't care about the address). Each layer trusts the others. Networking works exactly the same way.</div>
+</div>
+
+<h2>The 5 layers (TCP/IP model)</h2>
+<p>Data starts at the top (your app), goes <b>down</b> the stack on the sender, crosses the wire, then <b>up</b> the stack on the receiver. Click any layer below to inspect it.</p>
+
+<div class="lab" id="lab-stack">
+  <h4>⚙ The protocol stack — click a layer</h4>
+  <div class="desc">Each layer adds its own header (encapsulation). Hover the data-unit names for definitions.</div>
+  <div id="stack-svg"></div>
+  <div id="stack-info" class="readout" style="margin-top:10px;min-height:54px"></div>
+</div>
+
+<table>
+<tr><th>#</th><th>Layer</th><th>One-job summary</th><th>Data unit</th><th>Address</th></tr>
+<tr><td>5</td><td><b style="color:var(--violet)">Application</b></td><td>The actual program (web, email, DNS)</td><td>Message</td><td>—</td></tr>
+<tr><td>4</td><td><b style="color:var(--blue)">Transport</b></td><td>Get data to the right <i>program</i> on a host, (TCP) reliably</td><td><span class="kw" data-g="segment">Segment</span></td><td><span class="kw" data-g="port">Port</span></td></tr>
+<tr><td>3</td><td><b style="color:var(--accent)">Network</b></td><td>Get data to the right <i>host</i>, across many networks</td><td><span class="kw" data-g="datagram">Datagram</span></td><td><span class="kw" data-g="IP address">IP</span></td></tr>
+<tr><td>2</td><td><b style="color:var(--accent2)">Data-link</b></td><td>Get data across <i>one link</i> to the next box</td><td><span class="kw" data-g="frame">Frame</span></td><td><span class="kw" data-g="MAC address">MAC</span></td></tr>
+<tr><td>1</td><td><b style="color:var(--yellow)">Physical</b></td><td>Turn bits into signals on wire/air</td><td>Bits</td><td>—</td></tr>
+</table>
+<div class="trick"><b>Memory trick — layer order</b><br>Top→bottom: <span class="hook">All People Need Data Packets</span> = <b>A</b>pplication, (Presentation/Session skipped in TCP/IP), <b>Transport</b>, <b>N</b>etwork, <b>D</b>ata-link, <b>P</b>hysical. Or bottom-up the classic <span class="hook">"Please Do Not Throw Apples"</span>.</div>
+
+<h2>Encapsulation — watch a packet travel</h2>
+<p>Going down the sender's stack, each layer <b>wraps</b> the data with its own header. The receiver <b>unwraps</b> in reverse. In between, the packet crosses the network <b>hop by hop</b> — and here's the key insight most people miss.</p>
+
+<div class="lab" id="lab-journey">
+  <h4>⚙ The journey: down the stack → across hops → up the stack</h4>
+  <div class="desc">Press play. Watch the message get wrapped layer-by-layer, cross two routers, and get unwrapped at the server. <b>Watch the address row at the bottom.</b></div>
+  <div id="journey-svg"></div>
+  <div class="controls" style="margin-top:4px">
+    <button class="btn sm" id="jr-play">▶ Play</button>
+    <button class="btn sm ghost" id="jr-prev">◀ Prev</button>
+    <button class="btn sm ghost" id="jr-next">Next ▶</button>
+    <button class="btn sm ghost" id="jr-reset">↺ Reset</button>
+    <span class="readout" style="margin-left:6px">Step <b id="jr-n">0</b>/7</span>
+  </div>
+  <div id="jr-cap" style="margin-top:10px;font-size:13px"></div>
+</div>
+
+<div class="exam"><b>The key insight:</b> the <span class="kw" data-g="IP address">IP addresses</span> (source &amp; final destination) stay <b>the same</b> the whole journey — that's the network layer planning the <i>whole trip</i>. But the <span class="kw" data-g="MAC address">MAC addresses</span> <b>change at every hop</b>, because the datagram is re-wrapped in a <b>new frame</b> for each individual link. <span class="hook" style="font-size:.9em">Network layer plans the trip · link layer drives each leg</span>.</div>
+
+<h2>So why each chapter exists</h2>
+<div class="card">
+<div class="flow-step"><div class="n">7</div><div><b>Why unicast routing?</b> Routing <i>is</i> the network layer's main job. A datagram's destination is many hops away; at each <span class="kw" data-g="router">router</span>, which link moves it closer? Routers build <span class="kw" data-g="forwarding table">forwarding tables</span> to answer that. <b>Unicast</b> = one destination. So unicast routing = how routers find the best path to one destination.</div></div>
+<div class="flow-step"><div class="n alt">8</div><div><b>Why network management?</b> The layers explain how data <i>flows</i>; management is how we keep the machinery <i>healthy</i>. With hundreds of routers/switches, an admin must monitor & configure them remotely — that's <span class="kw" data-g="SNMP">SNMP</span> (a manager polling agents). Not user data — the operations layer on top.</div></div>
+<div class="flow-step"><div class="n alt">9</div><div><b>Why the link layer?</b> The physical layer only moves raw bits. <i>Someone</i> must frame them, error-check them, and arbitrate a shared wire — that's the data-link layer (chapters 9–10).</div></div>
+<div class="flow-step" style="border:none"><div class="n">11</div><div><b>Why SDN / wireless / physical?</b> SDN re-architects how the network layer's "brain" is organized; wireless is the link+physical layers over air; the physical layer (13) is the bits-to-signals foundation everything sits on.</div></div>
+</div>
+
+<div class="note"><b>Lock in this mental model:</b> each layer adds its own wrapper and trusts the layer below. Down the stack: message → +port (segment) → +IP (datagram) → +MAC & error bits (frame) → bits on the wire. Up the stack: reverse. <b>Routing</b> = the network layer choosing paths; <b>management</b> = keeping the whole system running.</div>
 `;
 
 // ---------- CHAPTER 7: ROUTING ----------
@@ -1477,6 +1551,138 @@ document.getElementById('topbtn').onclick=()=>window.scrollTo({top:0,behavior:'s
 
 // ============ LAB SIMULATIONS ============
 const LAB_INIT={};
+
+// ---- FOUNDATIONS: protocol stack (clickable) ----
+function initStack(){
+  const layers=[
+    ['5 · Application','#b48cff','Your program: web browser, email, DNS. Produces the raw message. Hands it to transport.','Message'],
+    ['4 · Transport','#4aa3ff','Adds a PORT number so data reaches the right program. TCP also adds reliability (acks, ordering, retransmits). Unit: segment.','Segment'],
+    ['3 · Network','#ff7a1a','Adds source & destination IP addresses. Routers use these to deliver the datagram across many networks. This is where ROUTING happens. Unit: datagram.','Datagram'],
+    ['2 · Data-link','#33d6a6','Adds MAC addresses + error-check bits to cross ONE link to the next box. Does framing, error control & (on shared links) MAC. Unit: frame.','Frame'],
+    ['1 · Physical','#ffd23f','Turns the frame&rsquo;s bits into actual signals — voltages, light, radio — on the medium. Unit: bits.','Bits'],
+  ];
+  let svg='<svg viewBox="0 0 360 250" style="width:100%;max-width:480px;display:block;margin:auto">';
+  layers.forEach((l,i)=>{
+    const y=6+i*48;
+    svg+=`<g class="node" data-i="${i}" style="cursor:pointer"><rect x="18" y="${y}" width="280" height="40" rx="7" fill="${l[1]}22" stroke="${l[1]}" stroke-width="1.5"/><text x="34" y="${y+25}" font-size="12" fill="${l[1]}" font-weight="700">${l[0]}</text><text x="290" y="${y+25}" text-anchor="end" font-size="10" fill="#8b98a9">${l[3]}</text></g>`;
+    if(i<layers.length-1) svg+=`<text x="308" y="${y+44}" font-size="13" fill="#8b98a9">↓</text>`;
+  });
+  svg+='</svg>';
+  const host=document.getElementById('stack-svg'); host.innerHTML=svg;
+  const info=document.getElementById('stack-info');
+  info.innerHTML='Click a layer to see its job. Notice data flows <b>down</b> ↓ on the sender (each layer wraps the one above), and back <b>up</b> on the receiver.';
+  host.querySelectorAll('.node').forEach(g=>{
+    const l=layers[+g.dataset.i];
+    g.onclick=()=>info.innerHTML=`<b style="color:${l[1]}">${l[0]}</b> — ${l[2]}`;
+  });
+}
+
+// ---- FOUNDATIONS: the journey (encapsulation + hop-by-hop) ----
+const JR_STEPS=[
+  {n:0,cap:"<b>Setup.</b> Laptop (left) wants to send a message to the Server (right), across two routers. Press ▶ Play to watch encapsulation and the hop-by-hop trip."},
+  {n:1,cap:"<b>Down the stack — encapsulation.</b> The app message gets wrapped: +Port (Transport→<span class='kw' data-g='segment'>segment</span>), +IP (Network→<span class='kw' data-g='datagram'>datagram</span>), +MAC & error bits (Data-link→<span class='kw' data-g='frame'>frame</span>), then sent as bits."},
+  {n:2,cap:"<b>Hop 1.</b> The frame crosses the first link to Router 1. Source MAC = Laptop, Dest MAC = Router 1. The <span class='kw' data-g='IP address'>IP</span> inside is unchanged."},
+  {n:3,cap:"<b>Router 1 re-frames.</b> It strips the old frame, reads the destination IP, looks up its forwarding table, and wraps the SAME datagram in a NEW frame for the next link. <b>MAC addresses change; IP stays.</b>"},
+  {n:4,cap:"<b>Hop 2.</b> New frame crosses to Router 2. Source MAC = Router 1, Dest MAC = Router 2. IP still unchanged."},
+  {n:5,cap:"<b>Router 2 re-frames again.</b> Same story: new frame for the final link. Dest MAC now = Server."},
+  {n:6,cap:"<b>Hop 3 → arrival.</b> The frame reaches the Server. The IP addresses were constant end-to-end; the MAC addresses changed every hop."},
+  {n:7,cap:"<b>Up the stack — decapsulation.</b> The Server unwraps in reverse: frame→datagram→segment→message. The app finally reads the original message. ✓"},
+];
+function initJourney(){
+  const host=document.getElementById('journey-svg');
+  host.innerHTML=`
+  <svg id="jr-svg" viewBox="0 0 680 250" style="width:100%;max-width:680px;display:block;margin:auto">
+    <!-- nodes -->
+    <g font-size="9" text-anchor="middle">
+      <rect x="20" y="60" width="90" height="48" rx="8" fill="#121821" stroke="#4aa3ff" stroke-width="1.5"/><text x="65" y="80" fill="#4aa3ff" font-weight="700">LAPTOP</text><text x="65" y="96" fill="#8b98a9">app: hello</text>
+      <rect x="250" y="60" width="80" height="48" rx="8" fill="#121821" stroke="#ff7a1a" stroke-width="1.4"/><text x="290" y="80" fill="#ff7a1a" font-weight="700">ROUTER 1</text><text x="290" y="96" fill="#8b98a9">L3</text>
+      <rect x="360" y="60" width="80" height="48" rx="8" fill="#121821" stroke="#ff7a1a" stroke-width="1.4"/><text x="400" y="80" fill="#ff7a1a" font-weight="700">ROUTER 2</text><text x="400" y="96" fill="#8b98a9">L3</text>
+      <rect x="580" y="60" width="90" height="48" rx="8" fill="#121821" stroke="#33d6a6" stroke-width="1.5"/><text x="625" y="80" fill="#33d6a6" font-weight="700">SERVER</text><text x="625" y="96" fill="#8b98a9">app</text>
+    </g>
+    <!-- links -->
+    <line x1="110" y1="84" x2="250" y2="84" stroke="#243140" stroke-width="1.4" stroke-dasharray="4 5"/>
+    <line x1="330" y1="84" x2="360" y2="84" stroke="#243140" stroke-width="1.4" stroke-dasharray="4 5"/>
+    <line x1="440" y1="84" x2="580" y2="84" stroke="#243140" stroke-width="1.4" stroke-dasharray="4 5"/>
+
+    <!-- encapsulation stack (over laptop) -->
+    <g id="jr-stack" opacity="0" font-size="8" text-anchor="middle">
+      <rect id="es-msg" x="30" y="150" width="70" height="16" rx="3" fill="#b48cff33" stroke="#b48cff"/><text x="65" y="161" fill="#b48cff">message</text>
+      <rect id="es-seg" x="24" y="150" width="82" height="16" rx="3" fill="#4aa3ff22" stroke="#4aa3ff" opacity="0"/><text id="es-seg-t" x="65" y="161" fill="#4aa3ff" opacity="0">port|message</text>
+      <rect id="es-dg" x="18" y="150" width="94" height="16" rx="3" fill="#ff7a1a22" stroke="#ff7a1a" opacity="0"/><text id="es-dg-t" x="65" y="161" fill="#ff7a1a" opacity="0">IP|port|msg</text>
+      <rect id="es-fr" x="12" y="150" width="106" height="16" rx="3" fill="#33d6a622" stroke="#33d6a6" opacity="0"/><text id="es-fr-t" x="65" y="161" fill="#33d6a6" opacity="0">MAC|IP|…|CRC</text>
+    </g>
+
+    <!-- moving frame packet -->
+    <g id="jr-pkt" opacity="0" text-anchor="middle">
+      <rect x="-36" y="-13" width="72" height="26" rx="5" fill="#161e2a" stroke="#33d6a6" stroke-width="1.4"/>
+      <text id="jr-pkt-t" x="0" y="3" font-size="8" fill="#33d6a6">frame</text>
+    </g>
+
+    <!-- address tracker -->
+    <rect x="20" y="200" width="650" height="42" rx="8" fill="#0d1117" stroke="#243140"/>
+    <text x="30" y="216" font-size="9" fill="#8b98a9">ADDRESSES on the wire right now:</text>
+    <text x="30" y="232" font-size="10" font-family="var(--mono)"><tspan fill="#ff7a1a" id="jr-ip">IP: —</tspan>   <tspan fill="#33d6a6" id="jr-mac">MAC: —</tspan></text>
+    <text x="660" y="232" font-size="8.5" text-anchor="end" fill="#8b98a9" id="jr-note"></text>
+  </svg>`;
+
+  const pkt=host.querySelector('#jr-pkt');
+  const pktT=host.querySelector('#jr-pkt-t');
+  const stack=host.querySelector('#jr-stack');
+  const ipEl=host.querySelector('#jr-ip'), macEl=host.querySelector('#jr-mac'), noteEl=host.querySelector('#jr-note');
+  const cap=document.getElementById('jr-cap'), nn=document.getElementById('jr-n');
+  let step=0, playing=false, raf=null, tmr=null;
+
+  function clearAll(){ if(raf)cancelAnimationFrame(raf); if(tmr)clearTimeout(tmr); raf=null;tmr=null; }
+  function setPkt(x){ pkt.setAttribute('transform','translate('+x+',84)'); }
+  function tween(a,b,ms,f,done){ if(raf)cancelAnimationFrame(raf); const t0=performance.now();
+    (function fr(now){const k=Math.min(1,(now-t0)/ms);const e=k<.5?2*k*k:1-Math.pow(-2*k+2,2)/2;f(a+(b-a)*e);if(k<1)raf=requestAnimationFrame(fr);else{raf=null;done&&done();}})(performance.now()); }
+  function setAddr(ip,mac,note){ ipEl.textContent='IP: '+ip; macEl.textContent='   MAC: '+mac; noteEl.textContent=note||''; }
+  const show=(el,o)=>el.setAttribute('opacity',o);
+
+  // static rendering of a step's end-state
+  function staticStep(s){
+    clearAll(); step=s; nn.textContent=s;
+    cap.innerHTML=JR_STEPS[s].cap; if(window.attachGlossWithin)window.attachGlossWithin(cap);
+    // defaults
+    show(stack,0);['es-seg','es-seg-t','es-dg','es-dg-t','es-fr','es-fr-t'].forEach(id=>show(host.querySelector('#'+id),0));
+    show(pkt,0);
+    if(s===0){ setAddr('—','—',''); }
+    if(s===1){ show(stack,1);['es-seg','es-seg-t','es-dg','es-dg-t','es-fr','es-fr-t'].forEach(id=>show(host.querySelector('#'+id),1)); setAddr('Laptop → Server','—','built'); }
+    if(s===2){ setPkt(180);show(pkt,1);pktT.textContent='frame';setAddr('Laptop → Server','Laptop → R1','hop 1'); }
+    if(s===3){ setPkt(290);show(pkt,1);setAddr('Laptop → Server','re-wrapping…','R1 re-frames'); }
+    if(s===4){ setPkt(345);show(pkt,1);setAddr('Laptop → Server','R1 → R2','hop 2'); }
+    if(s===5){ setPkt(400);show(pkt,1);setAddr('Laptop → Server','re-wrapping…','R2 re-frames'); }
+    if(s===6){ setPkt(560);show(pkt,1);setAddr('Laptop → Server','R2 → Server','hop 3'); }
+    if(s===7){ show(pkt,0); show(stack,1); show(host.querySelector('#es-msg'),1); setAddr('Laptop → Server','delivered','unwrapped ✓'); }
+  }
+
+  function animTo(s){
+    nn.textContent=s; cap.innerHTML=JR_STEPS[s].cap; if(window.attachGlossWithin)window.attachGlossWithin(cap);
+    if(s===1){ // encapsulation: reveal layers one by one
+      show(stack,1); setAddr('building…','—','');
+      const seq=[['es-seg','es-seg-t'],['es-dg','es-dg-t'],['es-fr','es-fr-t']];
+      let i=0;(function nextLayer(){ if(i<seq.length){ seq[i].forEach(id=>tween(0,1,300,v=>show(host.querySelector('#'+id),v))); i++; tmr=setTimeout(nextLayer,360);} else { setAddr('Laptop → Server','—','built'); chain(s);} })();
+    } else if(s===2){ pktT.textContent='frame';setPkt(118);show(pkt,1);setAddr('Laptop → Server','Laptop → R1','hop 1'); tween(118,180,800,setPkt,()=>chain(s)); }
+    else if(s===3){ setPkt(180);show(pkt,1); tween(180,290,700,setPkt,()=>{ setAddr('Laptop → Server','re-wrapping…','R1 re-frames'); flash(); tmr=setTimeout(()=>chain(s),500); }); }
+    else if(s===4){ setPkt(290);show(pkt,1);setAddr('Laptop → Server','R1 → R2','hop 2'); tween(290,345,500,setPkt,()=>chain(s)); }
+    else if(s===5){ setPkt(345);show(pkt,1); tween(345,400,500,setPkt,()=>{ setAddr('Laptop → Server','re-wrapping…','R2 re-frames'); flash(); tmr=setTimeout(()=>chain(s),500); }); }
+    else if(s===6){ setPkt(400);show(pkt,1);setAddr('Laptop → Server','R2 → Server','hop 3'); tween(400,560,800,setPkt,()=>chain(s)); }
+    else if(s===7){ tween(1,0,300,v=>show(pkt,v),()=>{ // decapsulation
+        ['es-fr','es-fr-t','es-dg','es-dg-t','es-seg','es-seg-t'].forEach((id,k)=>tmr=setTimeout(()=>show(host.querySelector('#'+id),0),k*150));
+        setAddr('Laptop → Server','delivered','unwrapped ✓'); chain(s); }); }
+    else staticStep(0);
+  }
+  function flash(){ macEl.style.transition='none';macEl.style.fill='#ff5d5d';setTimeout(()=>{macEl.style.transition='fill .6s';macEl.style.fill='#33d6a6';},80); }
+  function chain(s){ if(playing){ if(s<7){step=s+1;tmr=setTimeout(()=>animTo(step),650);} else {playing=false;setPlay(false);} } }
+  function setPlay(on){document.getElementById('jr-play').textContent=on?'⏸ Pause':'▶ Play';}
+
+  document.getElementById('jr-play').onclick=()=>{ if(playing){playing=false;setPlay(false);clearAll();return;} playing=true;setPlay(true); if(step>=7)step=0; step=Math.max(1,step===0?1:step); animTo(step); };
+  document.getElementById('jr-next').onclick=()=>{playing=false;setPlay(false);if(step<7){step++;staticStep(step);}};
+  document.getElementById('jr-prev').onclick=()=>{playing=false;setPlay(false);if(step>0){step--;staticStep(step);}};
+  document.getElementById('jr-reset').onclick=()=>{playing=false;setPlay(false);staticStep(0);};
+  staticStep(0);
+}
+LAB_INIT.layers={fn:()=>{initStack();initJourney();},done:false};
 
 // ---- CH7: Distance-Vector ----
 // Network: A-B(2), B-C(3), C-D(1), A-C(7) ; line + shortcut
